@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Adding Row-Level Filtering Policy — Apache Ranger + IBM watsonx.data</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Fira+Code:wght@400;500;600&display=swap');
+:root{
+  --primary:#2563eb;--primary-light:#dbeafe;--primary-dark:#1d4ed8;
+  --accent:#ea580c;--accent-light:#ffedd5;
+  --accent2:#7c3aed;--accent2-light:#ede9fe;
+  --success:#16a34a;--success-light:#dcfce7;
+  --warning:#d97706;--warning-light:#fef3c7;
+  --danger:#dc2626;--danger-light:#fee2e2;
+  --info:#0284c7;--info-light:#e0f2fe;
+  --bg:#ffffff;--bg2:#f8fafc;--bg3:#f1f5f9;
+  --card:#ffffff;--border:#e2e8f0;--border2:#cbd5e1;
+  --text:#0f172a;--muted:#475569;--dim:#94a3b8;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.06);
+  --shadow-lg:0 4px 24px rgba(0,0,0,.1),0 12px 48px rgba(0,0,0,.08);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.75;overflow-x:hidden;}
+.bg-mesh{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+.bg-mesh::before{content:'';position:absolute;width:800px;height:800px;background:radial-gradient(circle,rgba(37,99,235,.06),transparent 65%);top:-200px;left:-200px;animation:mA 18s ease-in-out infinite;}
+.bg-mesh::after{content:'';position:absolute;width:600px;height:600px;background:radial-gradient(circle,rgba(124,58,237,.05),transparent 65%);bottom:-100px;right:-100px;animation:mB 22s ease-in-out infinite;}
+.bg-orb{position:fixed;width:400px;height:400px;background:radial-gradient(circle,rgba(234,88,12,.04),transparent 65%);top:40%;left:25%;z-index:0;pointer-events:none;animation:mC 26s ease-in-out infinite;}
+@keyframes mA{0%,100%{transform:translate(0,0);}50%{transform:translate(50px,-40px);}}
+@keyframes mB{0%,100%{transform:translate(0,0);}50%{transform:translate(-40px,50px);}}
+@keyframes mC{0%,100%{transform:translate(0,0);}33%{transform:translate(30px,-30px);}66%{transform:translate(-30px,30px);}}
+#pbar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--primary),var(--accent2),var(--accent));z-index:999;width:0%;transition:width .08s linear;box-shadow:0 0 8px rgba(37,99,235,.4);}
+.wrap{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:0 24px 100px;}
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:100px 0 60px;position:relative;}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;background:var(--primary-light);border:1px solid rgba(37,99,235,.3);border-radius:100px;padding:7px 20px;font-size:11.5px;font-weight:700;color:var(--primary);letter-spacing:.08em;text-transform:uppercase;margin-bottom:32px;animation:riseIn .9s ease forwards;opacity:0;}
+.ldot{width:7px;height:7px;background:var(--primary);border-radius:50%;animation:lp 2s ease infinite;}
+@keyframes lp{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(37,99,235,.4);}50%{transform:scale(1.3);box-shadow:0 0 0 5px rgba(37,99,235,0);}}
+.hero h1{font-size:clamp(2.1rem,5.5vw,3.6rem);font-weight:900;line-height:1.1;letter-spacing:-.04em;margin-bottom:24px;animation:riseIn .9s .12s ease forwards;opacity:0;}
+.g1{background:linear-gradient(135deg,#2563eb,#7c3aed,#ea580c);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.hero-desc{font-size:1.1rem;color:var(--muted);max-width:600px;line-height:1.7;margin-bottom:40px;animation:riseIn .9s .24s ease forwards;opacity:0;}
+.hero-meta{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;animation:riseIn .9s .36s ease forwards;opacity:0;}
+.hm{display:flex;align-items:center;gap:7px;background:var(--bg3);border:1px solid var(--border);border-radius:100px;padding:8px 18px;font-size:13px;color:var(--muted);box-shadow:var(--shadow);}
+.hm strong{color:var(--text);}
+.back-link{display:inline-flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);border-radius:100px;padding:8px 18px;font-size:13px;color:var(--muted);text-decoration:none;transition:all .3s;margin-bottom:20px;animation:riseIn .9s .48s ease forwards;opacity:0;}
+.back-link:hover{background:var(--primary-light);border-color:var(--primary);color:var(--primary);}
+.scroll-cue{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;animation:riseIn 1s .8s ease forwards;opacity:0;}
+.scroll-cue span{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--dim);}
+.sarrow{width:20px;height:20px;border-right:2px solid var(--dim);border-bottom:2px solid var(--dim);transform:rotate(45deg);animation:bounce 2s ease infinite;}
+@keyframes bounce{0%,100%{transform:rotate(45deg) translateY(0);}50%{transform:rotate(45deg) translateY(5px);}}
+@keyframes riseIn{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+.rev{opacity:0;transform:translateY(28px);transition:opacity .7s ease,transform .7s ease;}
+.rev.show{opacity:1;transform:translateY(0);}
+.slabel{display:flex;align-items:center;gap:10px;margin-bottom:18px;}
+.snum{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--primary),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;box-shadow:0 4px 16px rgba(37,99,235,.25);}
+.stag{font-size:10.5px;font-weight:800;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;}
+h2{font-size:clamp(1.5rem,3vw,2.1rem);font-weight:800;letter-spacing:-.03em;line-height:1.25;margin-bottom:16px;color:var(--text);}
+h3{font-size:1.05rem;font-weight:700;color:var(--primary-dark);margin:28px 0 12px;display:flex;align-items:center;gap:8px;}
+h3::before{content:'';width:3px;height:18px;background:linear-gradient(to bottom,var(--primary),var(--accent2));border-radius:2px;flex-shrink:0;}
+p{color:var(--muted);margin-bottom:14px;font-size:.98rem;}
+strong{color:var(--text);}
+em{color:var(--accent);font-style:normal;font-weight:700;}
+.hr{height:1px;background:linear-gradient(90deg,transparent,var(--border2),transparent);margin:52px 0;}
+.box{border-radius:14px;padding:18px 22px;margin:20px 0;display:flex;gap:14px;align-items:flex-start;border:1px solid;position:relative;overflow:hidden;}
+.box::after{content:'';position:absolute;top:0;left:0;width:3px;height:100%;border-radius:0 2px 2px 0;}
+.box.info{background:var(--info-light);border-color:rgba(2,132,199,.25);}.box.info::after{background:var(--info);}
+.box.warn{background:var(--warning-light);border-color:rgba(217,119,6,.25);}.box.warn::after{background:var(--warning);}
+.box.ok{background:var(--success-light);border-color:rgba(22,163,74,.25);}.box.ok::after{background:var(--success);}
+.box.err{background:var(--danger-light);border-color:rgba(220,38,38,.25);}.box.err::after{background:var(--danger);}
+.box.tip{background:var(--accent2-light);border-color:rgba(124,58,237,.25);}.box.tip::after{background:var(--accent2);}
+.box-ico{font-size:20px;flex-shrink:0;line-height:1.4;}
+.box-body{flex:1;}
+.box-title{font-weight:800;font-size:13.5px;margin-bottom:5px;}
+.box.info .box-title{color:var(--info);}
+.box.warn .box-title{color:var(--warning);}
+.box.ok .box-title{color:var(--success);}
+.box.err .box-title{color:var(--danger);}
+.box.tip .box-title{color:var(--accent2);}
+.box-body p{margin:0;font-size:13.5px;color:var(--muted);}
+.code{background:#0f172a;border:1px solid #1e293b;border-radius:14px;overflow:hidden;margin:18px 0;box-shadow:var(--shadow-lg);}
+.code-top{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#1e293b;border-bottom:1px solid #334155;}
+.mac{display:flex;gap:6px;}.mac span{width:12px;height:12px;border-radius:50%;}
+.mac .r{background:#ff5f57;}.mac .y{background:#febc2e;}.mac .g{background:#28c840;}
+.code-lang{font-size:11px;color:#64748b;font-family:'Fira Code',monospace;}
+.copy-btn{background:rgba(255,255,255,.06);border:1px solid #334155;border-radius:6px;padding:4px 12px;font-size:11px;color:#94a3b8;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;}
+.copy-btn:hover{background:rgba(37,99,235,.25);border-color:#3b82f6;color:#93c5fd;}
+.copy-btn.done{background:rgba(22,163,74,.2);border-color:#16a34a;color:#4ade80;}
+pre{padding:22px;overflow-x:auto;font-family:'Fira Code',monospace;font-size:13px;line-height:1.75;color:#e2e8f0;}
+.kw{color:#f472b6;}.str{color:#67e8f9;}
+code{font-family:'Fira Code',monospace;font-size:.84em;background:var(--primary-light);border:1px solid rgba(37,99,235,.2);border-radius:5px;padding:1px 7px;color:var(--primary-dark);}
+.steps{position:relative;margin:20px 0;}
+.steps::before{content:'';position:absolute;left:20px;top:44px;bottom:44px;width:2px;background:linear-gradient(to bottom,var(--primary),var(--accent2),rgba(124,58,237,.1));}
+.step{display:flex;gap:20px;padding:16px 0;}
+.step-n{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;flex-shrink:0;z-index:1;box-shadow:0 0 0 4px var(--bg),0 0 0 6px rgba(37,99,235,.2);transition:all .3s;}
+.step:hover .step-n{transform:scale(1.12);box-shadow:0 0 0 4px var(--bg),0 0 0 8px rgba(37,99,235,.35);}
+.step-body{flex:1;padding:8px 0;}
+.step-title{font-weight:700;font-size:15px;color:var(--text);margin-bottom:5px;}
+.step-desc{font-size:13.5px;color:var(--muted);margin:0;line-height:1.6;}
+.ss{border-radius:14px;border:1px solid var(--border);background:var(--bg2);margin:20px 0;overflow:hidden;box-shadow:var(--shadow);}
+.ss-bar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--bg3);border-bottom:1px solid var(--border);}
+.ss-url{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:4px 12px;font-size:11px;color:var(--dim);font-family:'Fira Code',monospace;}
+.ss-body{padding:28px 24px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:160px;text-align:center;}
+.ss-img{width:100%;display:block;border-radius:0;max-height:420px;object-fit:contain;}
+.ss-icon{font-size:36px;animation:float 3s ease-in-out infinite;}
+@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
+.ss-label{font-size:13px;font-weight:700;color:var(--muted);}
+.ss-sub{font-size:11.5px;color:var(--dim);}
+.ss-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:100px;font-size:11px;font-weight:700;margin-top:4px;}
+.ss-badge.red{background:var(--danger-light);border:1px solid rgba(220,38,38,.3);color:var(--danger);}
+.ss-badge.green{background:var(--success-light);border:1px solid rgba(22,163,74,.3);color:var(--success);}
+.ss-badge.blue{background:var(--primary-light);border:1px solid rgba(37,99,235,.3);color:var(--primary);}
+.ck-list{list-style:none;display:flex;flex-direction:column;gap:10px;margin:18px 0;}
+.ck-list li{display:flex;align-items:flex-start;gap:12px;padding:13px 18px;background:var(--card);border:1px solid var(--border);border-radius:12px;font-size:14px;color:var(--muted);transition:all .25s;box-shadow:var(--shadow);}
+.ck-list li:hover{border-color:var(--primary);background:var(--primary-light);}
+.ck-box{width:22px;height:22px;border-radius:6px;background:var(--success-light);border:1px solid rgba(22,163,74,.4);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;margin-top:1px;color:var(--success);}
+.footer{text-align:center;padding:48px 0 28px;border-top:1px solid var(--border);margin-top:64px;}
+.footer p{font-size:13px;color:var(--dim);}
+</style>
+</head>
+<body>
+<div class="bg-mesh"></div><div class="bg-orb"></div>
+<div id="pbar"></div>
+<div class="wrap">
+
+<!-- HERO -->
+<section class="hero">
+  <a href="ranger-blog-light.html" class="back-link">← Back to Main Guide</a>
+  <div class="eyebrow"><span class="ldot"></span>IBM watsonx.data · Apache Ranger · Row-Level Filtering</div>
+  <h1>Adding <span class="g1">Row-Level Filtering</span><br/>Policy in Apache Ranger</h1>
+  <p class="hero-desc">Control data access at the row level — allow users to see only specific subsets of data based on filter conditions.</p>
+  <div class="hero-meta">
+    <div class="hm"><span>📖</span><strong>8 min</strong> read</div>
+    <div class="hm"><span>🔒</span> Fine-Grained Access Control</div>
+    <div class="hm"><span>🛡️</span> Apache Ranger</div>
+    <div class="hm"><span>⚙️</span> watsonx.data</div>
+  </div>
+  <div class="scroll-cue"><span>Scroll</span><div class="sarrow"></div></div>
+</section>
+
+<!-- INTRODUCTION -->
+<section class="rev">
+  <h2>What is Row-Level Filtering?</h2>
+  <p>Row-level filtering allows users to access a <strong>subset of rows</strong> in a table based on specific conditions. Instead of granting or denying access to an entire table, you can define policies that filter which rows a user can see when they query the table.</p>
+  
+  <div class="box info">
+    <span class="box-ico">💡</span>
+    <div class="box-body">
+      <div class="box-title">Use Case Example</div>
+      <p>A sales table contains data for all regions. With row-level filtering, you can ensure that <code>diuser</code> only sees rows where <code>region='US-WEST'</code>, while <code>User2</code> only sees rows where <code>region='EU-CENTRAL'</code> — all from the same table.</p>
+    </div>
+  </div>
+
+  <div style="background:linear-gradient(135deg,#eff6ff,#f5f3ff);border:1px solid rgba(124,58,237,.25);border-radius:16px;padding:24px 28px;margin:24px 0;position:relative;overflow:hidden;box-shadow:0 4px 16px rgba(37,99,235,.1);">
+    <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--primary),var(--accent2));"></div>
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px;">
+      <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,var(--primary),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff;flex-shrink:0;box-shadow:0 4px 12px rgba(37,99,235,.3);">📚</div>
+      <div style="flex:1;">
+        <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:4px;">Need to Set Up Ranger Integration First?</div>
+        <div style="font-size:13px;color:var(--muted);">Complete the base setup before configuring row-level filtering policies</div>
+      </div>
+    </div>
+    <a href="ranger-blog-light.html" style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,var(--primary),var(--accent2));color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:700;transition:all .3s;box-shadow:0 4px 12px rgba(37,99,235,.3);">
+      <span>Go to Main Integration Guide</span>
+      <span style="font-size:16px;">→</span>
+    </a>
+  </div>
+</section>
+
+<div class="hr"></div>
+
+<!-- PREREQUISITES -->
+<section class="rev">
+  <div class="slabel"><div class="snum">📋</div><span class="stag">Prerequisites</span></div>
+  <h2>Before You Begin</h2>
+  <p>Ensure you have the following in place before creating row-level filtering policies:</p>
+  
+  <ul class="ck-list">
+    <li><div class="ck-box">✓</div><strong>IBM watsonx.data instance</strong> — A running watsonx.data deployment (SaaS or On-Premises)</li>
+    <li><div class="ck-box">✓</div><strong>Apache Ranger provisioned</strong> — Apache Ranger server is installed and accessible</li>
+    <li><div class="ck-box">✓</div><strong>Ranger integration enabled</strong> — Apache Ranger policy is enabled in watsonx.data. See <a href="ranger-blog-light.html" style="color:var(--primary);text-decoration:none;font-weight:600;">Enabling Apache Ranger policy for resources</a></li>
+    <li><div class="ck-box">✓</div><strong>User created</strong> — The user (e.g., <code>diuser</code>) exists in both watsonx.data and Apache Ranger with matching usernames</li>
+    <li><div class="ck-box">✓</div><strong>Table exists</strong> — The target table is registered in a catalog accessible by watsonx.data</li>
+  </ul>
+</section>
+
+<div class="hr"></div>
+
+<!-- PROCEDURE -->
+<section class="rev">
+  <div class="slabel"><div class="snum">01</div><span class="stag">Procedure</span></div>
+  <h2>Creating a Row-Level Filter Policy</h2>
+  <p>Follow these steps to create a row-level filtering policy in Apache Ranger that restricts which rows a user can access.</p>
+
+  <h3>Step 1: Access Apache Ranger Service Manager</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-n">1</div>
+      <div class="step-body"><div class="step-title">Log in to Apache Ranger</div><p class="step-desc">Access the Apache Ranger console using your admin username and password.</p></div>
+    </div>
+    <div class="step">
+      <div class="step-n">2</div>
+      <div class="step-body"><div class="step-title">Navigate to Service Manager</div><p class="step-desc">From the Ranger home page, go to <strong>Service Manager</strong> and locate your PRESTO service (e.g., <code>watsonx-presto</code>).</p></div>
+    </div>
+    <div class="step">
+      <div class="step-n">3</div>
+      <div class="step-body"><div class="step-title">Open the service policies page</div><p class="step-desc">Click on the service name to open the policies page where you can add row-level filter policies.</p></div>
+    </div>
+  </div>
+
+  <!-- Screenshot placeholder: Service Manager -->
+  <div class="ss">
+    <div class="ss-bar">
+      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+      <div class="ss-url">Apache Ranger → Service Manager → watsonx-presto</div>
+    </div>
+    <div class="ss-body">
+      <div class="ss-icon">🛡️</div>
+      <div class="ss-label">Screenshot: Opening Service Policies Page</div>
+      <div class="ss-sub">Service Manager → Click on watsonx-presto service name</div>
+      <div class="ss-badge blue">PRESTO Service</div>
+    </div>
+  </div>
+
+  <h3>Step 2: Add Row-Level Filter Policy</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-n">4</div>
+      <div class="step-body"><div class="step-title">Click "Add New Policy"</div><p class="step-desc">On the policies page, click the <strong>Add New Policy</strong> button to create a new row-level filter policy.</p></div>
+    </div>
+    <div class="step">
+      <div class="step-n">5</div>
+      <div class="step-body"><div class="step-title">Fill in Policy Details</div><p class="step-desc">In the <strong>Policy Details</strong> section, provide a descriptive policy name (e.g., <code>row-filter-diuser-customer</code>) and an optional description explaining the policy's purpose.</p></div>
+    </div>
+  </div>
+
+  <h3>Step 3: Define Resources</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-n">6</div>
+      <div class="step-body"><div class="step-title">Select catalog, schema, and table</div><p class="step-desc">In the <strong>Resources</strong> section, specify the exact catalog, schema, and table for which this row-level filter applies. For example: <strong>Catalog</strong> = <code>iceberg_data</code>, <strong>Schema</strong> = <code>dischema</code>, <strong>Table</strong> = <code>customer</code>.</p></div>
+    </div>
+  </div>
+
+  <h3>Step 4: Configure Row Filter Conditions</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-n">7</div>
+      <div class="step-body"><div class="step-title">Add user and permissions</div><p class="step-desc">In the <strong>Row Filter Conditions</strong> section, select the user (e.g., <code>diuser</code>) and set the <strong>Permissions</strong> to <strong>Select</strong>.</p></div>
+    </div>
+    <div class="step">
+      <div class="step-n">8</div>
+      <div class="step-body"><div class="step-title">Enter the Row Level Filter expression</div><p class="step-desc">In the <strong>Row Level Filter</strong> field, enter the filter condition. For example: <code>c1=1</code> (only rows where column <code>c1</code> equals <code>1</code> will be visible to diuser).</p></div>
+    </div>
+  </div>
+
+  <div class="box tip">
+    <span class="box-ico">💡</span>
+    <div class="box-body">
+      <div class="box-title">Filter Expression Examples</div>
+      <p>Row-level filter expressions use SQL-like syntax. Examples: <code>region='US-WEST'</code>, <code>department='Sales'</code>, <code>year>=2023</code>, <code>status='active' AND region='EU'</code></p>
+    </div>
+  </div>
+
+  <!-- Screenshot placeholder: Row Filter Conditions -->
+  <div class="ss">
+    <div class="ss-bar">
+      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+      <div class="ss-url">Apache Ranger → Add New Policy → Row Filter Conditions</div>
+    </div>
+    <div class="ss-body">
+      <div class="ss-icon">🔍</div>
+      <div class="ss-label">Screenshot: Row Filter Conditions</div>
+      <div class="ss-sub">User: diuser | Permissions: Select | Row Level Filter: c1=1</div>
+      <div class="ss-badge blue">Filter Expression: c1=1</div>
+    </div>
+  </div>
+
+  <h3>Step 5: Save the Policy</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-n">9</div>
+      <div class="step-body"><div class="step-title">Click Save</div><p class="step-desc">Scroll to the bottom of the policy form and click <strong>Save</strong>. The row-level filter policy is now active in Apache Ranger.</p></div>
+    </div>
+  </div>
+
+  <!-- Screenshot placeholder: Save Policy -->
+  <div class="ss">
+    <div class="ss-bar">
+      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+      <div class="ss-url">Apache Ranger → Add New Policy → Save</div>
+    </div>
+    <div class="ss-body">
+      <div class="ss-icon">💾</div>
+      <div class="ss-label">Screenshot: Saving the Policy</div>
+      <div class="ss-sub">Click Save button to activate the row-level filter policy</div>
+      <div class="ss-badge green">✅ Policy Saved</div>
+    </div>
+  </div>
+</section>
+
+<div class="hr"></div>
+
+<!-- VERIFICATION -->
+<section class="rev">
+  <div class="slabel"><div class="snum">02</div><span class="stag">Verification</span></div>
+  <h2>Verifying Row-Level Access Control</h2>
+  <p>Now test the row-level filter policy by logging in as <code>diuser</code> and querying the table. The results should only include rows that match the filter condition.</p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-n">1</div>
+      <div class="step-body"><div class="step-title">Log in to watsonx.data as diuser</div><p class="step-desc">Access the watsonx.data console using diuser's credentials.</p></div>
+    </div>
+    <div class="step">
+      <div class="step-n">2</div>
+      <div class="step-body"><div class="step-title">Open Query Workspace</div><p class="step-desc">From the navigation menu, click <strong>Query workspace</strong> and select the Presto engine.</p></div>
+    </div>
+    <div class="step">
+      <div class="step-n">3</div>
+      <div class="step-body"><div class="step-title">Run a query to access the table</div><p class="step-desc">Execute a simple SELECT query against the table:</p></div>
+    </div>
+  </div>
+
+  <div class="code">
+    <div class="code-top">
+      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+      <span class="code-lang">SQL — watsonx.data Query Workspace (Presto)</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">SELECT</span> * <span class="kw">FROM</span> <span class="str">iceberg_data</span>.<span class="str">dischema</span>.<span class="str">customer</span>;</pre>
+  </div>
+
+  <h3>Before Filter: All Rows Visible (Admin User)</h3>
+  <p>First, let's see what the admin user sees when querying the table without any row-level filter applied:</p>
+
+  <!-- Screenshot placeholder: Before Filter - All Rows -->
+  <div class="ss">
+    <div class="ss-bar">
+      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+      <div class="ss-url">watsonx.data → Query Workspace → Admin User</div>
+    </div>
+    <div class="ss-body">
+      <div class="ss-icon">📊</div>
+      <div class="ss-label">Screenshot: Before Filter - All Rows Visible</div>
+      <div class="ss-sub">Admin user runs SELECT * — All rows in the table are returned (c1=1, c1=2, c1=3, etc.)</div>
+      <div class="ss-badge blue">All Rows Visible</div>
+    </div>
+  </div>
+
+  <h3>After Filter: Only Filtered Rows Visible (diuser)</h3>
+  <p>Now, when diuser (with the row-level filter policy) runs the same query, only rows matching the filter condition are returned:</p>
+
+  <!-- Screenshot placeholder: After Filter - Filtered Results -->
+  <div class="ss">
+    <div class="ss-bar">
+      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+      <div class="ss-url">watsonx.data → Query Workspace → diuser</div>
+    </div>
+    <div class="ss-body">
+      <div class="ss-icon">✅</div>
+      <div class="ss-label">Screenshot: After Filter - Only Filtered Rows</div>
+      <div class="ss-sub">diuser runs SELECT * — Only rows with c1=1 are returned (other rows filtered out)</div>
+      <div class="ss-badge green">✅ Row-Level Filter Applied</div>
+    </div>
+  </div>
+
+  <div class="box ok">
+    <span class="box-ico">🎉</span>
+    <div class="box-body">
+      <div class="box-title">Row-Level Filtering is Working</div>
+      <p>diuser can now only see rows where column <code>c1</code> equals <code>1</code>. All other rows in the table are filtered out automatically by Apache Ranger. The user doesn't need to add a WHERE clause — the filter is enforced transparently at the policy level.</p>
+    </div>
+  </div>
+</section>
+
+<div class="hr"></div>
+
+<!-- KEY POINTS -->
+<section class="rev">
+  <div class="slabel"><div class="snum">✦</div><span class="stag">Key Points</span></div>
+  <h2>Important Considerations</h2>
+  
+  <ul class="ck-list">
+    <li><div class="ck-box">✓</div><strong>Filter expressions use SQL syntax</strong> — You can use standard SQL conditions like <code>=</code>, <code>!=</code>, <code>></code>, <code><</code>, <code>AND</code>, <code>OR</code>, <code>IN</code>, etc.</li>
+    <li><div class="ck-box">✓</div><strong>Filters are transparent to users</strong> — Users don't need to modify their queries. The filter is applied automatically by Ranger.</li>
+    <li><div class="ck-box">✓</div><strong>Multiple users, different filters</strong> — You can create different row-level filter policies for different users on the same table.</li>
+    <li><div class="ck-box">✓</div><strong>Column names must be exact</strong> — The column names in your filter expression must match the actual column names in the table (case-sensitive).</li>
+    <li><div class="ck-box">✓</div><strong>Policy cache refresh</strong> — Changes to row-level filter policies may take a few seconds to propagate based on your policy cache time setting.</li>
+    <li><div class="ck-box">✓</div><strong>Combine with column masking</strong> — Row-level filtering can be used alongside column masking policies for comprehensive data protection.</li>
+  </ul>
+</section>
+
+<div class="footer">
+  <p>IBM watsonx.data · Apache Ranger Row-Level Filtering — Practical Guide · © 2025</p>
+  <p style="margin-top:8px;"><a href="ranger-blog-light.html" style="color:var(--primary);text-decoration:none;">← Back to Main Guide</a></p>
+</div>
+
+</div><!-- end .wrap -->
+
+<script>
+/* Progress bar */
+window.addEventListener('scroll',()=>{
+  const d=document.documentElement;
+  const pct=(d.scrollTop/(d.scrollHeight-d.clientHeight))*100;
+  document.getElementById('pbar').style.width=Math.min(pct,100)+'%';
+});
+
+/* Scroll reveal */
+const ro=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('show');});
+},{threshold:.07,rootMargin:'0px 0px -40px 0px'});
+document.querySelectorAll('.rev').forEach(el=>ro.observe(el));
+
+/* Copy code */
+function copyCode(btn){
+  const pre=btn.closest('.code').querySelector('pre');
+  const text=pre.innerText;
+  navigator.clipboard.writeText(text).then(()=>{
+    btn.textContent='Copied!';btn.classList.add('done');
+    setTimeout(()=>{btn.textContent='Copy';btn.classList.remove('done');},2200);
+  });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Enforcing Apache Ranger Policies on IBM watsonx.data — Practical Walkthrough</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Fira+Code:wght@400;500;600&display=swap');
+:root{
+  --primary:#2563eb;--primary-light:#dbeafe;--primary-dark:#1d4ed8;
+  --accent:#ea580c;--accent-light:#ffedd5;
+  --accent2:#7c3aed;--accent2-light:#ede9fe;
+  --success:#16a34a;--success-light:#dcfce7;
+  --warning:#d97706;--warning-light:#fef3c7;
+  --danger:#dc2626;--danger-light:#fee2e2;
+  --info:#0284c7;--info-light:#e0f2fe;
+  --bg:#ffffff;--bg2:#f8fafc;--bg3:#f1f5f9;
+  --card:#ffffff;--border:#e2e8f0;--border2:#cbd5e1;
+  --text:#0f172a;--muted:#475569;--dim:#94a3b8;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.06);
+  --shadow-lg:0 4px 24px rgba(0,0,0,.1),0 12px 48px rgba(0,0,0,.08);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.75;overflow-x:hidden;}
+.bg-mesh{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+.bg-mesh::before{content:'';position:absolute;width:800px;height:800px;background:radial-gradient(circle,rgba(37,99,235,.06),transparent 65%);top:-200px;left:-200px;animation:mA 18s ease-in-out infinite;}
+.bg-mesh::after{content:'';position:absolute;width:600px;height:600px;background:radial-gradient(circle,rgba(124,58,237,.05),transparent 65%);bottom:-100px;right:-100px;animation:mB 22s ease-in-out infinite;}
+.bg-orb{position:fixed;width:400px;height:400px;background:radial-gradient(circle,rgba(234,88,12,.04),transparent 65%);top:40%;left:25%;z-index:0;pointer-events:none;animation:mC 26s ease-in-out infinite;}
+@keyframes mA{0%,100%{transform:translate(0,0);}50%{transform:translate(50px,-40px);}}
+@keyframes mB{0%,100%{transform:translate(0,0);}50%{transform:translate(-40px,50px);}}
+@keyframes mC{0%,100%{transform:translate(0,0);}33%{transform:translate(30px,-30px);}66%{transform:translate(-30px,30px);}}
+#pbar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--primary),var(--accent2),var(--accent));z-index:999;width:0%;transition:width .08s linear;box-shadow:0 0 8px rgba(37,99,235,.4);}
+.wrap{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:0 24px 100px;}
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:100px 0 60px;position:relative;}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;background:var(--primary-light);border:1px solid rgba(37,99,235,.3);border-radius:100px;padding:7px 20px;font-size:11.5px;font-weight:700;color:var(--primary);letter-spacing:.08em;text-transform:uppercase;margin-bottom:32px;animation:riseIn .9s ease forwards;opacity:0;}
+.ldot{width:7px;height:7px;background:var(--primary);border-radius:50%;animation:lp 2s ease infinite;}
+@keyframes lp{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(37,99,235,.4);}50%{transform:scale(1.3);box-shadow:0 0 0 5px rgba(37,99,235,0);}}
+.hero h1{font-size:clamp(2.1rem,5.5vw,3.6rem);font-weight:900;line-height:1.1;letter-spacing:-.04em;margin-bottom:24px;animation:riseIn .9s .12s ease forwards;opacity:0;}
+.g1{background:linear-gradient(135deg,#2563eb,#7c3aed,#ea580c);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.hero-desc{font-size:1.1rem;color:var(--muted);max-width:600px;line-height:1.7;margin-bottom:40px;animation:riseIn .9s .24s ease forwards;opacity:0;}
+.hero-meta{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;animation:riseIn .9s .36s ease forwards;opacity:0;}
+.hm{display:flex;align-items:center;gap:7px;background:var(--bg3);border:1px solid var(--border);border-radius:100px;padding:8px 18px;font-size:13px;color:var(--muted);box-shadow:var(--shadow);}
+.hm strong{color:var(--text);}
+.scroll-cue{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;animation:riseIn 1s .8s ease forwards;opacity:0;}
+.scroll-cue span{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--dim);}
+.sarrow{width:20px;height:20px;border-right:2px solid var(--dim);border-bottom:2px solid var(--dim);transform:rotate(45deg);animation:bounce 2s ease infinite;}
+@keyframes bounce{0%,100%{transform:rotate(45deg) translateY(0);}50%{transform:rotate(45deg) translateY(5px);}}
+@keyframes riseIn{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+.rev{opacity:0;transform:translateY(28px);transition:opacity .7s ease,transform .7s ease;}
+.rev.show{opacity:1;transform:translateY(0);}
+.slabel{display:flex;align-items:center;gap:10px;margin-bottom:18px;}
+.snum{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--primary),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;box-shadow:0 4px 16px rgba(37,99,235,.25);}
+.stag{font-size:10.5px;font-weight:800;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;}
+h2{font-size:clamp(1.5rem,3vw,2.1rem);font-weight:800;letter-spacing:-.03em;line-height:1.25;margin-bottom:16px;color:var(--text);}
+h3{font-size:1.05rem;font-weight:700;color:var(--primary-dark);margin:28px 0 12px;display:flex;align-items:center;gap:8px;}
+h3::before{content:'';width:3px;height:18px;background:linear-gradient(to bottom,var(--primary),var(--accent2));border-radius:2px;flex-shrink:0;}
+p{color:var(--muted);margin-bottom:14px;font-size:.98rem;}
+strong{color:var(--text);}
+em{color:var(--accent);font-style:normal;font-weight:700;}
+.hr{height:1px;background:linear-gradient(90deg,transparent,var(--border2),transparent);margin:52px 0;}
+.box{border-radius:14px;padding:18px 22px;margin:20px 0;display:flex;gap:14px;align-items:flex-start;border:1px solid;position:relative;overflow:hidden;}
+.box::after{content:'';position:absolute;top:0;left:0;width:3px;height:100%;border-radius:0 2px 2px 0;}
+.box.info{background:var(--info-light);border-color:rgba(2,132,199,.25);}.box.info::after{background:var(--info);}
+.box.warn{background:var(--warning-light);border-color:rgba(217,119,6,.25);}.box.warn::after{background:var(--warning);}
+.box.ok{background:var(--success-light);border-color:rgba(22,163,74,.25);}.box.ok::after{background:var(--success);}
+.box.err{background:var(--danger-light);border-color:rgba(220,38,38,.25);}.box.err::after{background:var(--danger);}
+.box.tip{background:var(--accent2-light);border-color:rgba(124,58,237,.25);}.box.tip::after{background:var(--accent2);}
+.box-ico{font-size:20px;flex-shrink:0;line-height:1.4;}
+.box-body{flex:1;}
+.box-title{font-weight:800;font-size:13.5px;margin-bottom:5px;}
+.box.info .box-title{color:var(--info);}
+.box.warn .box-title{color:var(--warning);}
+.box.ok .box-title{color:var(--success);}
+.box.err .box-title{color:var(--danger);}
+.box.tip .box-title{color:var(--accent2);}
+.box-body p{margin:0;font-size:13.5px;color:var(--muted);}
+.code{background:#0f172a;border:1px solid #1e293b;border-radius:14px;overflow:hidden;margin:18px 0;box-shadow:var(--shadow-lg);}
+.code-top{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#1e293b;border-bottom:1px solid #334155;}
+.mac{display:flex;gap:6px;}.mac span{width:12px;height:12px;border-radius:50%;}
+.mac .r{background:#ff5f57;}.mac .y{background:#febc2e;}.mac .g{background:#28c840;}
+.code-lang{font-size:11px;color:#64748b;font-family:'Fira Code',monospace;}
+.copy-btn{background:rgba(255,255,255,.06);border:1px solid #334155;border-radius:6px;padding:4px 12px;font-size:11px;color:#94a3b8;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;}
+.copy-btn:hover{background:rgba(37,99,235,.25);border-color:#3b82f6;color:#93c5fd;}
+.copy-btn.done{background:rgba(22,163,74,.2);border-color:#16a34a;color:#4ade80;}
+pre{padding:22px;overflow-x:auto;font-family:'Fira Code',monospace;font-size:13px;line-height:1.75;color:#e2e8f0;}
+.kw{color:#f472b6;}.str{color:#67e8f9;}
+code{font-family:'Fira Code',monospace;font-size:.84em;background:var(--primary-light);border:1px solid rgba(37,99,235,.2);border-radius:5px;padding:1px 7px;color:var(--primary-dark);}
+.tw{overflow-x:auto;border-radius:14px;border:1px solid var(--border);margin:20px 0;box-shadow:var(--shadow);}
+table{width:100%;border-collapse:collapse;font-size:13.5px;}
+thead tr{background:linear-gradient(135deg,var(--primary-light),var(--accent2-light));}
+th{padding:13px 18px;text-align:left;font-weight:700;color:var(--primary-dark);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);}
+td{padding:13px 18px;color:var(--muted);border-bottom:1px solid var(--border);vertical-align:top;line-height:1.55;}
+tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:var(--bg3);}
+td:first-child{font-weight:600;color:var(--text);}
+.steps{position:relative;margin:20px 0;}
+.steps::before{content:'';position:absolute;left:20px;top:44px;bottom:44px;width:2px;background:linear-gradient(to bottom,var(--primary),var(--accent2),rgba(124,58,237,.1));}
+.step{display:flex;gap:20px;padding:16px 0;}
+.step-n{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;flex-shrink:0;z-index:1;box-shadow:0 0 0 4px var(--bg),0 0 0 6px rgba(37,99,235,.2);transition:all .3s;}
+.step:hover .step-n{transform:scale(1.12);box-shadow:0 0 0 4px var(--bg),0 0 0 8px rgba(37,99,235,.35);}
+.step-body{flex:1;padding:8px 0;}
+.step-title{font-weight:700;font-size:15px;color:var(--text);margin-bottom:5px;}
+.step-desc{font-size:13.5px;color:var(--muted);margin:0;line-height:1.6;}
+.ss{border-radius:14px;border:1px solid var(--border);background:var(--bg2);margin:20px 0;overflow:hidden;box-shadow:var(--shadow);}
+.ss-bar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--bg3);border-bottom:1px solid var(--border);}
+.ss-url{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:4px 12px;font-size:11px;color:var(--dim);font-family:'Fira Code',monospace;}
+.ss-body{padding:28px 24px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:160px;text-align:center;}
+.ss-img{width:100%;display:block;border-radius:0;max-height:420px;object-fit:contain;}
+.ss-icon{font-size:36px;animation:float 3s ease-in-out infinite;}
+@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
+.ss-label{font-size:13px;font-weight:700;color:var(--muted);}
+.ss-sub{font-size:11.5px;color:var(--dim);}
+.ss-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:100px;font-size:11px;font-weight:700;margin-top:4px;}
+.ss-badge.red{background:var(--danger-light);border:1px solid rgba(220,38,38,.3);color:var(--danger);}
+.ss-badge.green{background:var(--success-light);border:1px solid rgba(22,163,74,.3);color:var(--success);}
+.ss-badge.blue{background:var(--primary-light);border:1px solid rgba(37,99,235,.3);color:var(--primary);}
+.qresult{background:#0f172a;border:1px solid #1e293b;border-radius:14px;overflow:hidden;margin:18px 0;box-shadow:var(--shadow-lg);}
+.qresult-top{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#1e293b;border-bottom:1px solid #334155;}
+.qresult-title{font-size:12px;font-weight:600;color:#94a3b8;font-family:'Fira Code',monospace;}
+.qresult-status{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;}
+.qresult-status.fail{color:#f87171;}.qresult-status.pass{color:#4ade80;}
+.qresult-status .dot{width:7px;height:7px;border-radius:50%;animation:lp 2s ease infinite;}
+.qresult-status.fail .dot{background:#f87171;}.qresult-status.pass .dot{background:#4ade80;}
+.qresult-body{padding:18px 20px;font-family:'Fira Code',monospace;font-size:13px;line-height:1.7;color:#e2e8f0;}
+.err-line{color:#f87171;}.dim-line{color:#475569;}
+.tbl-header{display:grid;border-bottom:1px solid #334155;padding-bottom:8px;margin-bottom:8px;}
+.tbl-row{display:grid;padding:4px 0;border-bottom:1px solid #1e293b;}
+.tbl-row:last-child{border-bottom:none;}
+.col-h{font-size:11px;font-weight:700;color:#93c5fd;letter-spacing:.06em;text-transform:uppercase;padding:0 12px;}
+.col-v{font-size:12px;color:#94a3b8;padding:0 12px;}
+.arch{background:linear-gradient(135deg,#f8fafc,#f1f5f9);border:1px solid var(--border);border-radius:16px;padding:36px 28px;margin:24px 0;position:relative;overflow:hidden;box-shadow:var(--shadow);}
+.arch::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% -10%,rgba(37,99,235,.05),transparent 60%);pointer-events:none;}
+.arch-title{text-align:center;font-size:10px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-bottom:12px;}
+.arch-row{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;}
+.anode{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:14px 20px;text-align:center;min-width:130px;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .3s;cursor:default;box-shadow:var(--shadow);}
+.anode:hover{transform:translateY(-4px) scale(1.03);box-shadow:var(--shadow-lg);}
+.anode .ni{font-size:24px;}.anode .nt{font-size:12px;font-weight:800;}.anode .ns{font-size:10px;color:var(--dim);}
+.anode.blue{border-color:rgba(37,99,235,.35);background:linear-gradient(135deg,#fff,#eff6ff);}.anode.blue .nt{color:var(--primary);}
+.anode.purple{border-color:rgba(124,58,237,.35);background:linear-gradient(135deg,#fff,#f5f3ff);}.anode.purple .nt{color:var(--accent2);}
+.anode.green{border-color:rgba(22,163,74,.35);background:linear-gradient(135deg,#fff,#f0fdf4);}.anode.green .nt{color:var(--success);}
+.anode.teal{border-color:rgba(13,148,136,.35);background:linear-gradient(135deg,#fff,#f0fdfa);}.anode.teal .nt{color:#0d9488;}
+.anode.yellow{border-color:rgba(217,119,6,.35);background:linear-gradient(135deg,#fff,#fffbeb);}.anode.yellow .nt{color:var(--warning);}
+.anode.cpg{min-width:170px;padding:18px 28px;background:linear-gradient(135deg,#eff6ff,#f5f3ff);border-color:rgba(124,58,237,.4);box-shadow:0 4px 20px rgba(124,58,237,.1);}.anode.cpg .nt{color:var(--accent2);font-size:15px;}
+.anode.ranger{min-width:170px;padding:18px 28px;background:linear-gradient(135deg,#fff7ed,#fffbeb);border-color:rgba(234,88,12,.4);box-shadow:0 4px 20px rgba(234,88,12,.1);}.anode.ranger .nt{color:var(--accent);font-size:15px;}
+.pipe-wrap{display:flex;justify-content:center;margin:4px 0;}
+.pipe{width:2px;height:48px;background:var(--border2);position:relative;overflow:hidden;border-radius:2px;}
+.pipe::after{content:'';position:absolute;top:-40%;left:0;width:100%;height:40%;background:linear-gradient(to bottom,transparent,var(--primary),var(--accent2),transparent);animation:pf 1.6s ease-in-out infinite;}
+@keyframes pf{0%{top:-40%;}100%{top:120%;}}
+.pipe-label{display:flex;justify-content:center;margin:3px 0;}
+.plbl{font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 10px;border-radius:100px;border:1px solid;white-space:nowrap;}
+.plbl.blue{background:var(--primary-light);border-color:rgba(37,99,235,.3);color:var(--primary);}
+.plbl.orange{background:var(--accent-light);border-color:rgba(234,88,12,.3);color:var(--accent);}
+.plbl.gray{background:var(--bg3);border-color:var(--border2);color:var(--muted);}
+.dual-p{display:flex;justify-content:center;gap:90px;margin:4px 0;}
+.pcol{display:flex;flex-direction:column;align-items:center;gap:3px;}
+.abadge{display:inline-flex;align-items:center;gap:5px;padding:2px 10px;border-radius:100px;font-size:9px;font-weight:700;margin-top:5px;}
+.abadge.orange{background:var(--accent-light);border:1px solid rgba(234,88,12,.3);color:var(--accent);}
+.abadge.blue{background:var(--primary-light);border:1px solid rgba(37,99,235,.3);color:var(--primary);}
+.abadge .bd{width:5px;height:5px;border-radius:50%;animation:lp 2s ease infinite;}
+.abadge.orange .bd{background:var(--accent);}.abadge.blue .bd{background:var(--primary);}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;margin:20px 0;}
+.fc{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px;position:relative;overflow:hidden;transition:all .3s;box-shadow:var(--shadow);}
+.fc::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--primary),var(--accent2));transform:scaleX(0);transform-origin:left;transition:transform .4s ease;}
+.fc:hover{transform:translateY(-4px);border-color:rgba(37,99,235,.3);box-shadow:var(--shadow-lg);}
+.fc:hover::before{transform:scaleX(1);}
+.fc-icon{font-size:30px;margin-bottom:14px;display:block;}
+.fc-title{font-weight:800;font-size:15px;margin-bottom:8px;color:var(--text);}
+.fc-desc{font-size:13px;color:var(--muted);line-height:1.6;margin:0;}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:22px 0;}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px;text-align:center;transition:all .3s;box-shadow:var(--shadow);}
+.stat:hover{transform:translateY(-3px);border-color:var(--primary);box-shadow:var(--shadow-lg);}
+.stat-n{font-size:2.2rem;font-weight:900;background:linear-gradient(135deg,var(--primary),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;display:block;line-height:1.1;}
+.stat-l{font-size:12px;color:var(--dim);margin-top:5px;}
+.ck-list{list-style:none;display:flex;flex-direction:column;gap:10px;margin:18px 0;}
+.ck-list li{display:flex;align-items:flex-start;gap:12px;padding:13px 18px;background:var(--card);border:1px solid var(--border);border-radius:12px;font-size:14px;color:var(--muted);transition:all .25s;box-shadow:var(--shadow);}
+.ck-list li:hover{border-color:var(--primary);background:var(--primary-light);}
+.ck-box{width:22px;height:22px;border-radius:6px;background:var(--success-light);border:1px solid rgba(22,163,74,.4);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;margin-top:1px;color:var(--success);}
+.scenario{background:linear-gradient(135deg,var(--primary-light),var(--accent2-light));border:1px solid rgba(124,58,237,.25);border-radius:16px;padding:28px 32px;margin:24px 0;position:relative;overflow:hidden;box-shadow:var(--shadow);}
+.scenario::before{content:'';position:absolute;top:-1px;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--primary),var(--accent2),var(--accent));}
+.scenario-label{font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--accent2);margin-bottom:10px;}
+.scenario h3{font-size:1.2rem;font-weight:800;color:var(--text);margin:0 0 10px;display:flex;align-items:center;gap:8px;}
+.scenario h3::before{display:none;}
+.scenario p{font-size:14px;color:var(--muted);margin:0;}
+.user{display:inline-flex;align-items:center;gap:6px;background:var(--primary-light);border:1px solid rgba(37,99,235,.3);border-radius:100px;padding:3px 12px;font-size:12px;font-weight:700;color:var(--primary);}
+.user-a{background:var(--accent-light);border-color:rgba(234,88,12,.3);color:var(--accent);}
+.user-admin{background:var(--accent2-light);border-color:rgba(124,58,237,.3);color:var(--accent2);}
+.tags{display:flex;flex-wrap:wrap;gap:9px;margin:28px 0;}
+.tag{padding:6px 15px;border-radius:100px;font-size:12px;font-weight:600;border:1px solid;cursor:default;transition:all .2s;box-shadow:var(--shadow);}
+.tag:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg);}
+.tag.b{background:var(--primary-light);border-color:rgba(37,99,235,.3);color:var(--primary);}
+.tag.p{background:var(--accent2-light);border-color:rgba(124,58,237,.3);color:var(--accent2);}
+.tag.o{background:var(--accent-light);border-color:rgba(234,88,12,.3);color:var(--accent);}
+.tag.g{background:var(--success-light);border-color:rgba(22,163,74,.3);color:var(--success);}
+.footer{text-align:center;padding:48px 0 28px;border-top:1px solid var(--border);margin-top:64px;}
+.footer p{font-size:13px;color:var(--dim);}
+@media(max-width:640px){.stats{grid-template-columns:1fr;}.fgrid{grid-template-columns:1fr;}.dual-p{gap:44px;}}
+</style>
+</head>
+<body>
+<div class="bg-mesh"></div><div class="bg-orb"></div>
+<div id="pbar"></div>
+<div class="wrap">
+
+<!-- HERO -->
+<section class="hero">
+  <div class="eyebrow"><span class="ldot"></span>IBM watsonx.data · Apache Ranger · Practical Guide</div>
+  <h1>Enforcing <span class="g1">Apache Ranger</span><br/>Policies on IBM watsonx.data</h1>
+  <p class="hero-desc">A hands-on walkthrough — from a user getting access denied, to configuring Ranger policies and watching the same query succeed. No theory, just real steps.</p>
+  <div class="hero-meta">
+    <div class="hm"><span>📖</span><strong>15 min</strong> read</div>
+    <div class="hm"><span>🔒</span> Data Security</div>
+    <div class="hm"><span>⚙️</span> watsonx.data <strong>v2.1+</strong></div>
+    <div class="hm"><span>🛡️</span> Apache Ranger</div>
+    <div class="hm"><span>🧪</span> Hands-on Lab</div>
+  </div>
+  <div class="scroll-cue"><span>Scroll</span><div class="sarrow"></div></div>
+
+<!-- THE SCENARIO -->
+<section class="rev">
+  <div class="scenario">
+    <div class="scenario-label">🎯 What We're Building</div>
+    <h3>🧪 The Real-World Scenario</h3>
+    <p>We have an IBM watsonx.data instance. A normal user — <span class="user user-a">diuser</span> — needs to query a table in the Iceberg catalog. Right now, they get <strong>access denied</strong>. We'll integrate Apache Ranger, define a policy, and prove that the same query succeeds — all without changing anything in watsonx.data's own access control.</p>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><span class="stat-n">3</span><div class="stat-l">Phases to Complete</div></div>
+    <div class="stat"><span class="stat-n">1</span><div class="stat-l">Query: SELECT * FROM iceberg_data</div></div>
+    <div class="stat"><span class="stat-n">✓</span><div class="stat-l">Access Denied → Access Granted</div></div>
+  </div>
+
+  <div class="box warn">
+    <span class="box-ico">⚠️</span>
+    <div class="box-body">
+      <div class="box-title">Important: One Policy Engine at a Time</div>
+      <p>From watsonx.data v2.1+, you can only use <strong>one</strong> external policy engine — either Apache Ranger <em>or</em> IBM Knowledge Catalog. Choose before you begin. Also: <strong>Presto JDBC connection to Ranger may not work</strong> — you must add resources manually in Ranger (exact names required).</p>
+    </div>
+  </div>
+</section>
+
+<div class="hr"></div>
+
+<!-- ARCHITECTURE -->
+<section class="rev">
+  <div class="slabel"><div class="snum">🏗</div><span class="stag">Architecture</span></div>
+  <h2>How Authorization Flows</h2>
+  <p>Every query in watsonx.data passes through the <strong>Common Policy Gateway (CPG)</strong> before touching data. When Ranger integration is active, CPG delegates the allow/deny decision to Apache Ranger via the Ranger Plugin.</p>
+
+  <div class="arch">
+    <div class="arch-title">Query Authorization Flow — watsonx.data + Apache Ranger</div>
+    <div class="arch-row">
+      <div class="anode blue"><div class="ni">🔍</div><div class="nt">Presto</div><div class="ns">SQL Engine</div></div>
+      <div style="width:28px;"></div>
+      <div class="anode purple"><div class="ni">⚡</div><div class="nt">Apache Spark</div><div class="ns">Distributed Engine</div></div>
+    </div>
+    <div class="dual-p">
+      <div class="pcol"><div class="pipe"></div><div class="pipe-label"><span class="plbl blue">CPG Client</span></div><div class="pipe"></div></div>
+      <div class="pcol"><div class="pipe"></div><div class="pipe-label"><span class="plbl blue">CPG Client</span></div><div class="pipe"></div></div>
+    </div>
+    <div class="arch-title">Common Policy Gateway (CPG)</div>
+    <div class="arch-row">
+      <div class="anode cpg"><div class="ni">🔐</div><div class="nt">CPG</div><div class="ns">Authorization Hub</div><div class="abadge blue"><span class="bd"></span>Intercepts all access calls</div></div>
+    </div>
+    <div class="pipe-wrap"><div class="pipe"></div></div>
+    <div class="pipe-label"><span class="plbl orange">Ranger Plugin (added via Integration)</span></div>
+    <div class="pipe-wrap"><div class="pipe"></div></div>
+    <div class="arch-title">Policy Engine</div>
+    <div class="arch-row">
+      <div class="anode ranger"><div class="ni">🛡️</div><div class="nt">Apache Ranger</div><div class="ns">Centralized Policy Engine</div><div class="abadge orange"><span class="bd"></span>Ranger Plugin Active</div></div>
+    </div>
+    <div class="pipe-wrap"><div class="pipe"></div></div>
+    <div class="pipe-label"><span class="plbl gray">Allow / Deny Decision</span></div>
+    <div class="pipe-wrap"><div class="pipe"></div></div>
+    <div class="arch-title">Data Resources</div>
+    <div class="arch-row">
+      <div class="anode green"><div class="ni">🗂️</div><div class="nt">Iceberg</div><div class="ns">Catalog</div></div>
+      <div class="anode teal"><div class="ni">🐝</div><div class="nt">Hive</div><div class="ns">Catalog</div></div>
+      <div class="anode yellow"><div class="ni">🌊</div><div class="nt">Hudi</div><div class="ns">Catalog</div></div>
+    </div>
+  </div>
+</section>
+
+<div class="hr"></div>
+
+<!-- PHASE 1: SETUP USERS -->
+<section class="rev">
+  <div class="slabel"><div class="snum">01</div><span class="stag">Phase One</span></div>
+  <h2>Setting Up Users in watsonx.data</h2>
+  <p>Before testing access control, we need to configure a user <span class="user user-a">diuser</span> who will run queries and experience the access denied → access granted journey. This user needs specific roles and permissions across the platform.</p>
+
+  <div class="box info">
+    <span class="box-ico">ℹ️</span>
+    <div class="box-body">
+      <div class="box-title">SaaS vs On-Premises User Management</div>
+      <p>User creation and access management differs between <strong>watsonx.data SaaS</strong> and <strong>On-Premises</strong> deployments. This guide shows the <strong>On-Premises</strong> approach with screenshots from an on-prem installation. For SaaS, user management is typically handled through IBM Cloud IAM.</p>
+    </div>
+  </div>
+
+  <h3>Create User diuser in watsonx.data (On-Premises)</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-n">1</div>
+      <div class="step-body"><div class="step-title">Log in as watsonx.data Admin</div><p class="step-desc">Access the watsonx.data console with your administrator credentials.</p></div>
+    </div>
+    <div class="step">
+      <div class="step-n">2</div>
+      <div class="step-body"><div class="step-title">Create or add user diuser in the platform</div><p class="step-desc">Navigate to <strong>Access control</strong> → <strong>Users</strong> tab. Click <strong>Add User</strong> and create the user with username <code>diuser</code>.</p></div>
+    </div>
+  </div>
+
+  <!-- Screenshot placeholder: User creation -->
+  <div class="ss">
+    <div class="ss-bar">
+      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+      <div class="ss-url">watsonx.data (On-Prem) → Access Control → Users → Add User</div>
+    </div>
+    <div class="ss-body">
+      <div class="ss-icon">👤</div>
+      <div class="ss-label">Screenshot: Creating diuser in watsonx.data</div>
+      <div class="ss-sub">Access Control → Users tab → Add User → Enter username: diuser</div>
+      <div class="ss-badge blue">On-Premises Installation</div>
+    </div>
+  </div>
+
+  <h3>Step 1: Assign diuser as Metastore Admin to the Instance</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-n">3</div>
+      <div class="step-body"><div class="step-title">Grant instance-level access</div><p class="step-desc">In the user configuration or Access control section, assign <code>diuser</code> as a <strong>Metastore Admin</strong> to the watsonx.data instance. This grants basic platform access to run queries.</p></div>
+    </div>
+  </div>
+
+  <!-- Screenshot placeholder: Instance access -->
+  <div class="ss">
+    <div class="ss-bar">
+      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+      <div class="ss-url">watsonx.data (On-Prem) → Access Control → Instance Access</div>
+    </div>
+    <div class="ss-body">
+      <div class="ss-icon">🏢</div>
+      <div class="ss-label">Screenshot: Assigning Instance Access to diuser</div>
+      <div class="ss-sub">Access Control → Assign diuser as User to the watsonx.data instance</div>
+      <div class="ss-badge blue">Role: User</div>
+    </div>
+  </div>
+
+  <h3>Step 2: Add diuser as Admin of Presto and Spark Engines</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-n">4</div>
+      <div class="step-body"><div class="step-title">Navigate to Infrastructure manager</div><p class="step-desc">Go to <strong>Infrastructure manager</strong> section in the console.</p></div>
+    </div>
+    <div class="step">
+      <div class="step-n">5</div>
+      <div class="step-body"><div class="step-title">Add diuser to Presto engine</div><p class="step-desc">Select the <strong>Presto</strong> engine. Click <strong>Access control</strong> or similar option. Add <code>diuser</code> with <strong>Admin</strong> role to enable query execution.</p></div>
+    </div>
+    <div class="step">
+      <div class="step-n">6</div>
+      <div class="step-body"><div class="step-title">Add diuser to Spark engine</div><p class="step-desc">Select the <strong>Apache Spark</strong> engine. Add <code>diuser</code> with <strong>Admin</strong> role.</p></div>
+    </div>
+  </div>
+
+  <!-- Screenshot placeholder: Presto engine access -->
+  <div class="ss">
+    <div class="ss-bar">
+      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+      <div class="ss-url">watsonx.data (On-Prem) → Infrastructure → Engines → Presto</div>
+    </div>
+    <div class="ss-body">
+      <div class="ss-icon">🔍</div>
+      <div class="ss-label">Screenshot: Adding diuser to Presto Engine</div>
+      <div class="ss-sub">Infrastructure → Engines → Presto → Manage access → Add diuser</div>
+      <div class="ss-badge blue">Role: Admin</div>
+    </div>
+  </div>
+
+  <!-- Screenshot placeholder: Spark engine access -->
+  <div class="ss">
+    <div class="ss-bar">
+      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+      <div class="ss-url">watsonx.data (On-Prem) → Infrastructure → Engines → Spark</div>
+    </div>
+    <div class="ss-body">
+      <div class="ss-icon">⚡</div>
+      <div class="ss-label">Screenshot: Adding diuser to Spark Engine</div>
+      <div class="ss-sub">Infrastructure → Engines → Apache Spark → Manage access → Add diuser</div>
+      <div class="ss-badge blue">Role: Admin</div>
+    </div>
+  </div>
+
+  <h3>Step 3: Add diuser as User of Catalog</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-n">7</div>
+      <div class="step-body"><div class="step-title">Navigate to Infrastructure manager</div><p class="step-desc">Go to <strong>Infrastructure manager</strong> section.</p></div>
+    </div>
+    <div class="step">
+      <div class="step-n">8</div>
+      <div class="step-body"><div class="step-title">Grant catalog access</div><p class="step-desc">Select the <strong>iceberg_data</strong> catalog. Click <strong>Access control</strong> and add <code>diuser</code> with <strong>User</strong> role to grant catalog access.</p></div>
+    </div>
+  </div>
+
+  <!-- Screenshot placeholder: Catalog access -->
+  <div class="ss">
+    <div class="ss-bar">
+      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+      <div class="ss-url">watsonx.data (On-Prem) → Data → Catalogs → iceberg_data</div>
+    </div>
+    <div class="ss-body">
+      <div class="ss-icon">🗂️</div>
+      <div class="ss-label">Screenshot: Adding diuser to Iceberg Catalog</div>
+      <div class="ss-sub">Data → Catalogs → iceberg_data → Manage access → Add diuser</div>
+      <div class="ss-badge blue">Role: User</div>
+    </div>
+  </div>
+
+</section>
+
+<div class="hr"></div>
+
+<!-- PHASE 2: ACCESS DENIED -->
+<section class="rev">
+  <div class="slabel"><div class="snum">02</div><span class="stag">Phase Two</span></div>
+  <h2>Proving the Problem — Access Denied</h2>
+  <p>To demonstrate the security enforcement, we'll run the same query with two different users. First, we'll verify that <span class="user user-admin">Admin</span> can access the data successfully. Then we'll show that <span class="user user-a">diuser</span> gets access denied without a Ranger policy.</p>
+
+  <h3>Step 1: Verify Admin Access (Baseline)</h3>
+  <p>First, let's confirm that the admin user can successfully query the table. This establishes our baseline and proves the table exists and is accessible.</p>
+
+  <div class="code">
+    <div class="code-top">
+      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+      <span class="code-lang">SQL — watsonx.data Query Workspace (Presto) — Admin User</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">SELECT</span> * <span class="kw">FROM</span> <span class="str">iceberg_data</span>.<span class="str">dischema</span>.<span class="str">customer</span>;</pre>
+  </div>
+
+  <!-- Screenshot: Admin Success -->
+  <div class="ss">
+    <div class="ss-bar">
+      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+      <div class="ss-url">watsonx.data → Query Workspace → Admin User</div>
+    </div>
+    <div class="ss-body">
+      <div class="ss-icon">✅</div>
+      <div class="ss-label">Screenshot: Admin Query Success</div>
+      <div class="ss-sub">Admin user runs SELECT * FROM iceberg_data.dischema.customer — Query executes successfully</div>
+      <div class="ss-badge green">✅ Query Successful — Admin has full access</div>
+    </div>
+  </div>
+
+  <h3>Step 2: Run the Query as diuser (Access Denied)</h3>
+  <p>Now log in as <span class="user user-a">diuser</span> and run the exact same query. With no Ranger policy defined yet, the query should fail. This confirms that the security layer is working.</p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-n">1</div>
+      <div class="step-body"><div class="step-title">Log out of Admin, log in as diuser</div><p class="step-desc">Use the credentials for diuser to access the watsonx.data console.</p></div>
+    </div>
+    <div class="step">
+      <div class="step-n">2</div>
+      <div class="step-body"><div class="step-title">Open Query Workspace</div><p class="step-desc">From the navigation menu, click <strong>Query workspace</strong>. Select the Presto engine.</p></div>
+    </div>
+    <div class="step">
+      <div class="step-n">3</div>
+      <div class="step-body"><div class="step-title">Execute the same query</div><p class="step-desc">Run the identical query against the Iceberg catalog:</p></div>
+    </div>
+  </div>
+
+  <div class="code">
+    <div class="code-top">
+      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+      <span class="code-lang">SQL — watsonx.data Query Workspace (Presto) — diuser</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">SELECT</span> * <span class="kw">FROM</span> <span class="str">iceberg_data</span>.<span class="str">dischema</span>.<span class="str">customer</span>;</pre>
+  </div>
+
+  <!-- Screenshot: diuser Access Denied -->
+  <div class="ss">
+    <div class="ss-bar">
+      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+      <div class="ss-url">watsonx.data → Query Workspace → diuser</div>
+    </div>
+    <div class="ss-body">
+      <div class="ss-icon">🚫</div>
+      <div class="ss-label">Screenshot: Access Denied Error</div>
+      <div class="ss-sub">diuser runs SELECT * FROM iceberg_data.dischema.customer — Access Denied</div>
+      <div class="ss-badge red">❌ Access Denied — No Ranger policy defined</div>
+    </div>
+  </div>
+
+  <!-- Mock query result: error -->
+  <div class="qresult">
+    <div class="qresult-top">
+      <span class="qresult-title">Query Result — iceberg_data.dischema.customer</span>
+      <span class="qresult-status fail"><span class="dot"></span>FAILED</span>
+    </div>
+    <div class="qresult-body">
+      <div class="err-line">Error: Access Denied</div>
+      <div class="dim-line">User [diuser] does not have [SELECT] privilege on [iceberg_data/dischema/customer]</div>
+      <div class="dim-line">Policy engine: Apache Ranger | Decision: DENY</div>
+      <div class="dim-line">Query execution time: 0.3s</div>
+    </div>
+  </div>
+
+  <div class="box ok">
+    <span class="box-ico">✅</span>
+    <div class="box-body">
+      <div class="box-title">Access Denied = Security is Working</div>
+      <p>This error is expected and <em>good</em>. It confirms that the Ranger Plugin inside CPG is intercepting the query. If you see data returned here, the integration is not active — re-check your configuration.</p>
+    </div>
+  </div>
+</section>
+
+<div class="hr"></div>
+
+<!-- PHASE 3: CONFIGURE RANGER -->
+<section class="rev">
+  <div class="slabel"><div class="snum">03</div><span class="stag">Phase Three</span></div>
+  <h2>Configuring Apache Ranger — Add User &amp; Create Policy</h2>
+  <p>Now switch to the Apache Ranger console. We need to: (1) add <span class="user user-a">diuser</span> manually with the exact same username, (2) create a PRESTO service, and (3) define an access policy for <code>iceberg_data.dischema.customer</code>.</p>
+
+  <div class="box tip">
+    <span class="box-ico">🔑</span>
+    <div class="box-body">
+      <div class="box-title">Username Must Match Exactly</div>
+      <p>The username <code>diuser</code> you create in watsonx.data <strong>must exactly match</strong> the username you add in Apache Ranger. Case-sensitive. This is how CPG maps the query identity to the Ranger policy.</p>
+    </div>
+  </div>
+
+  <div class="box err">
+    <span class="box-ico">⚠️</span>
+    <div class="box-body">
+      <div class="box-title">Presto JDBC Connection to Ranger May Not Work</div>
+      <p>The Presto JDBC connection test in Ranger often fails in this integration. <strong>Do not rely on it.</strong> Instead, add resources manually using the exact catalog, schema, and table names. The policy will still be enforced correctly.</p>
+    </div>
+  </div>
+
+  <h3>Step 1 — Add diuser in Ranger</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-n">1</div>
+      <div class="step-body"><div class="step-title">Log in to Apache Ranger as Admin</div><p class="step-desc">Access the Ranger console with your administrator credentials.</p></div>
+    </div>
+    <div class="step">
+      <div class="step-n">2</div>
+      <div class="step-body"><div class="step-title">Go to Settings → Users/Groups/Roles</div><p class="step-desc">Navigate to <strong>Settings</strong> in the top menu, then click <strong>Users/Groups/Roles</strong>.</p></div>
+    </div>
+    <div class="step">
+      <div class="step-n">3</div>
+      <div class="step-body"><div class="step-title">Add New User — exact username match</div><p class="step-desc">Click <strong>Add New User</strong>. Enter the username <code>diuser</code> exactly as it appears in watsonx.data. Set a password and save. <em>Case-sensitive — must match exactly.</em></p></div>
+    </div>
+  </div>
+
+  <!-- Screenshot placeholder: Add user in Ranger -->
+  <div class="ss">
+    <div class="ss-bar">
+      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+      <div class="ss-url">Apache Ranger → Settings → Users/Groups/Roles → Add New User</div>
+    </div>
+    <div class="ss-body">
+      <div class="ss-icon">👤</div>
+      <div class="ss-label">Screenshot: Adding diuser in Apache Ranger</div>
+      <div class="ss-sub">Settings → Users/Groups/Roles → Add New User (diuser)</div>
+      <div class="ss-badge blue">Username must exactly match watsonx.data username</div>
+    </div>
+  </div>
+
+  <h3>Step 2 — Create a PRESTO Service in Ranger</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-n">1</div>
+      <div class="step-body"><div class="step-title">Go to Service Manager → PRESTO section</div><p class="step-desc">From the Ranger home page, click the <strong>Resource</strong> tab. Locate the <strong>PRESTO</strong> section in the service list.</p></div>
+    </div>
+    <div class="step">
+      <div class="step-n">2</div>
+      <div class="step-body"><div class="step-title">Click Add New Service (+)</div><p class="step-desc">Click the <strong>+</strong> icon next to PRESTO. Give the service a name (e.g., <code>watsonx-presto</code>). Fill in the connection details — even if the JDBC test fails, save the service.</p></div>
+    </div>
+  </div>
+
+  <!-- Screenshot placeholder: Add New Service form -->
+  <div class="ss">
+    <div class="ss-bar">
+      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+      <div class="ss-url">Apache Ranger → Service Manager → PRESTO → Add New Service Form</div>
+    </div>
+    <div class="ss-body">
+      <div class="ss-icon">📝</div>
+      <div class="ss-label">Screenshot: Add New Service Configuration</div>
+      <div class="ss-sub">Fill in service name (watsonx-presto) and connection details</div>
+      <div class="ss-badge blue">Service Configuration Form</div>
+    </div>
+  </div>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-n">3</div>
+      <div class="step-body"><div class="step-title">Save the service</div><p class="step-desc">Click <strong>Add</strong> to save. The service appears in the PRESTO section of Service Manager.</p></div>
+    </div>
+  </div>
+
+  <!-- Screenshot placeholder: Create Presto service -->
+  <div class="ss">
+    <div class="ss-bar">
+      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+      <div class="ss-url">Apache Ranger → Service Manager → PRESTO → Add New Service</div>
+    </div>
+    <div class="ss-body">
+      <div class="ss-icon">⚙️</div>
+      <div class="ss-label">Screenshot: Creating PRESTO Service in Ranger</div>
+      <div class="ss-sub">Service Manager → PRESTO section → Add New Service (+)</div>
+      <div class="ss-badge blue">Service name: watsonx-presto</div>
+    </div>
+  </div>
+
+  <h3>Step 3 — Create an Access Policy for diuser</h3>
+  
+  <div class="box info">
+    <span class="box-ico">ℹ️</span>
+    <div class="box-body">
+      <div class="box-title">Default Presto Policies</div>
+      <p>When you create a PRESTO service in Ranger, two default policies are automatically created for general access:</p>
+      <ul style="margin:8px 0 0 20px;padding:0;">
+        <li style="margin:4px 0;"><code>all - catalog, schema</code> — Provides basic catalog and schema level access</li>
+        <li style="margin:4px 0;"><code>all - catalog, schema, table</code> — Provides table level access</li>
+      </ul>
+      <p style="margin-top:8px;"><strong>Keep these default policies</strong> as they provide necessary baseline access. You will add a new policy for specific resource access control for diuser.</p>
+    </div>
+  </div>
+
+  <p>Now create a policy that grants <span class="user user-a">diuser</span> SELECT access on <code>iceberg_data.dischema.customer</code>. Since the JDBC connection may not work, add the resource path manually.</p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-n">1</div>
+      <div class="step-body"><div class="step-title">Click the service name to open it</div><p class="step-desc">Click <strong>watsonx-presto</strong> in the Service Manager. This opens the policy list for this service.</p></div>
+    </div>
+    <div class="step">
+      <div class="step-n">2</div>
+      <div class="step-body"><div class="step-title">Click Add New Policy</div><p class="step-desc">Click the <strong>Add New Policy</strong> button at the top right of the policy list.</p></div>
+    </div>
+    <div class="step">
+      <div class="step-n">3</div>
+      <div class="step-body"><div class="step-title">Set the resource path manually</div><p class="step-desc">In the resource fields, type the exact names or * (means applied to all): <strong>Catalog</strong> = <code>iceberg_data</code>, <strong>Schema</strong> = <code>dischema</code>, <strong>Table</strong> = <code>customer</code>. Do not use the auto-complete — type manually.</p></div>
+    </div>
+    <div class="step">
+      <div class="step-n">4</div>
+      <div class="step-body"><div class="step-title">Add diuser with SELECT permission</div><p class="step-desc">In the <strong>Allow Conditions</strong> section, add <code>diuser</code> username. Check the <strong>Select</strong> permission checkbox.</p></div>
+    </div>
+  </div>
+
+  <!-- Screenshot placeholder: Add diuser with SELECT permission -->
+  <div class="ss">
+    <div class="ss-bar">
+      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+      <div class="ss-url">Apache Ranger → watsonx-presto → Add New Policy → Allow Conditions</div>
+    </div>
+    <div class="ss-body">
+      <div class="ss-icon">✅</div>
+      <div class="ss-label">Screenshot: Adding diuser with SELECT Permission</div>
+      <div class="ss-sub">Allow Conditions → User: diuser → Permission: Select (checked)</div>
+      <div class="ss-badge blue">User and Permission Configuration</div>
+    </div>
+  </div>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-n">5</div>
+      <div class="step-body"><div class="step-title">Save the policy</div><p class="step-desc">Scroll to the bottom and click <strong>Save</strong>. The policy is now active in Ranger.</p></div>
+    </div>
+  </div>
+
+  <!-- Screenshot placeholder: Create policy -->
+  <div class="ss">
+    <div class="ss-bar">
+      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+      <div class="ss-url">Apache Ranger → watsonx-presto → Add New Policy</div>
+    </div>
+    <div class="ss-body">
+      <div class="ss-icon">📋</div>
+      <div class="ss-label">Screenshot: Creating Access Policy in Ranger</div>
+      <div class="ss-sub">Resource: iceberg_data / dischema / customer | User: diuser | Permission: SELECT</div>
+      <div class="ss-badge blue">Resources added manually — exact names required</div>
+    </div>
+  </div>
+
+  <div class="box tip">
+    <span class="box-ico">💡</span>
+    <div class="box-body">
+      <div class="box-title">Resource Naming is Critical</div>
+      <p>The catalog name (<code>iceberg_data</code>), schema (<code>dischema</code>), and table (<code>customer</code>) must match <strong>exactly</strong> what is registered in watsonx.data. A single character difference means the policy will not match and access will be denied.</p>
+    </div>
+  </div>
+</section>
+
+<div class="hr"></div>
+
+<!-- PHASE 4: ENABLE RANGER IN WATSONX.DATA -->
+<section class="rev">
+  <div class="slabel"><div class="snum">04</div><span class="stag">Phase Four</span></div>
+  <h2>Enabling Ranger Integration in watsonx.data</h2>
+  <p>Now switch back to watsonx.data as <span class="user user-admin">Admin</span>. Enable the <strong>External Policy</strong> toggle and add the Apache Ranger integration. This installs the Ranger Plugin into the CPG layer.</p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-n">1</div>
+      <div class="step-body"><div class="step-title">Log in to watsonx.data as Admin</div><p class="step-desc">Re-log in with your administrator credentials.</p></div>
+    </div>
+    <div class="step">
+      <div class="step-n">2</div>
+      <div class="step-body"><div class="step-title">Navigate to Access Control → Integrations</div><p class="step-desc">From the left navigation, select <strong>Access control</strong>, then click the <strong>Integrations</strong> tab.</p></div>
+    </div>
+    <div class="step">
+      <div class="step-n">3</div>
+      <div class="step-body"><div class="step-title">Enable External Policy</div><p class="step-desc">Toggle on <strong>Enable data policy within watsonx.data</strong> (External Policy). This activates the policy enforcement pipeline through CPG.</p></div>
+    </div>
+  </div>
+
+  <!-- Screenshot placeholder: Enable External Policy -->
+  <div class="ss">
+    <div class="ss-bar">
+      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+      <div class="ss-url">watsonx.data → Access Control → Integrations → Enable External Policy</div>
+    </div>
+    <div class="ss-body">
+      <div class="ss-icon">🔐</div>
+      <div class="ss-label">Screenshot: Enabling External Policy Toggle</div>
+      <div class="ss-sub">Access Control → Integrations tab → Toggle "Enable data policy within watsonx.data"</div>
+      <div class="ss-badge blue">External Policy Enabled</div>
+    </div>
+  </div>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-n">4</div>
+      <div class="step-body"><div class="step-title">Click "Integrate Service"</div><p class="step-desc">Click the <strong>Integrate service</strong> button. The integration configuration window opens.</p></div>
+    </div>
+    <div class="step">
+      <div class="step-n">5</div>
+      <div class="step-body"><div class="step-title">Fill in Ranger connection details</div><p class="step-desc">Complete all fields as shown in the table below. Upload the SSL certificate if your Ranger uses HTTPS.</p></div>
+    </div>
+    <div class="step">
+      <div class="step-n">6</div>
+      <div class="step-body"><div class="step-title">Click "List Resources" → Select the PRESTO resource</div><p class="step-desc">Click <strong>List resources</strong> to load available Ranger resources. Select the <strong>PRESTO</strong> resource (the <code>watsonx-presto</code> service you created).</p></div>
+    </div>
+    <div class="step">
+      <div class="step-n">7</div>
+      <div class="step-body"><div class="step-title">Click "Integrate"</div><p class="step-desc">Click <strong>Integrate</strong>. The Ranger Plugin is now installed in CPG. Apache Ranger appears as active in the integrations list.</p></div>
+    </div>
+  </div>
+
+  <h3>Integration Configuration Reference</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th>Field</th><th>Value / Description</th></tr></thead>
+      <tbody>
+        <tr><td>Service</td><td>Select <strong>Apache Ranger</strong></td></tr>
+        <tr><td>URL</td><td>Ranger URL, e.g. <code>https://ranger.example.com:6182</code></td></tr>
+        <tr><td>Username</td><td>Ranger admin username</td></tr>
+        <tr><td>Password</td><td>Ranger admin password</td></tr>
+        <tr><td>Port is SSL enabled</td><td>Check if Ranger uses HTTPS</td></tr>
+        <tr><td>Upload SSL Certificate</td><td>Upload <code>.pem</code> / <code>.crt</code> / <code>.cert</code> / <code>.cer</code> file</td></tr>
+        <tr><td>List resources</td><td>Click to load Ranger services — select <code>watsonx-presto</code></td></tr>
+        <tr><td>Policy Cache Time</td><td>Seconds between policy refreshes (e.g., <code>30</code>)</td></tr>
+        <tr><td>Enable data policy</td><td>✅ Check to enable AMS Policy alongside Ranger</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Screenshot placeholder: Enable External Policy + Ranger integration -->
+  <div class="ss">
+    <div class="ss-bar">
+      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+      <div class="ss-url">watsonx.data → Access Control → Integrations → Integrate Service</div>
+    </div>
+    <div class="ss-body">
+      <div class="ss-icon">🔗</div>
+      <div class="ss-label">Screenshot: Enabling External Policy &amp; Ranger Integration</div>
+      <div class="ss-sub">Access Control → Integrations tab → Enable External Policy → Integrate Service → Apache Ranger</div>
+      <div class="ss-badge blue">Ranger Plugin installed into CPG</div>
+    </div>
+  </div>
+
+  <div class="box ok">
+    <span class="box-ico">✅</span>
+    <div class="box-body">
+      <div class="box-title">Integration Active</div>
+      <p>Apache Ranger now appears in the Access Control integrations list with status <strong>Active</strong>. All Presto queries from this point forward will be authorized through CPG → Ranger Plugin → Apache Ranger.</p>
+    </div>
+  </div>
+</section>
+
+<div class="hr"></div>
+
+<!-- PHASE 5: ACCESS GRANTED -->
+<section class="rev">
+  <div class="slabel"><div class="snum">05</div><span class="stag">Phase Five</span></div>
+  <h2>The Proof — Same Query, Access Granted</h2>
+  <p>Now log back in as <span class="user user-a">diuser</span> and run the exact same query. This time, Ranger has a policy granting SELECT on <code>iceberg_data.dischema.customer</code> — and the query should return results.</p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-n">1</div>
+      <div class="step-body"><div class="step-title">Log out of Admin, log in as diuser</div><p class="step-desc">Switch back to diuser's credentials in the watsonx.data console.</p></div>
+    </div>
+    <div class="step">
+      <div class="step-n">2</div>
+      <div class="step-body"><div class="step-title">Open Query Workspace</div><p class="step-desc">Navigate to <strong>Query workspace</strong> and select the Presto engine.</p></div>
+    </div>
+    <div class="step">
+      <div class="step-n">3</div>
+      <div class="step-body"><div class="step-title">Run the same query again</div><p class="step-desc">Execute the identical query — no changes needed:</p></div>
+    </div>
+  </div>
+
+  <div class="code">
+    <div class="code-top">
+      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+      <span class="code-lang">SQL — watsonx.data Query Workspace (Presto)</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">SELECT</span> * <span class="kw">FROM</span> <span class="str">iceberg_data</span>.<span class="str">dischema</span>.<span class="str">customer</span>;</pre>
+  </div>
+
+  <!-- Screenshot placeholder: Access Granted -->
+  <div class="ss">
+    <div class="ss-bar">
+      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+      <div class="ss-url">watsonx.data → Query Workspace → Execute Query</div>
+    </div>
+    <div class="ss-body">
+      <div class="ss-icon">🎉</div>
+      <div class="ss-label">Screenshot: Query Returns Results</div>
+      <div class="ss-sub">diuser runs SELECT * FROM iceberg_data.dischema.customer — data returned</div>
+      <div class="ss-badge green">✅ Access Granted — Ranger policy matched</div>
+    </div>
+  </div>
+
+  <!-- Mock query result: success -->
+  <div class="qresult">
+    <div class="qresult-top">
+      <span class="qresult-title">Query Result — iceberg_data.dischema.customer</span>
+      <span class="qresult-status pass"><span class="dot"></span>SUCCESS</span>
+    </div>
+    <div class="qresult-body">
+      <div class="tbl-header" style="grid-template-columns:1fr 1fr 1fr 1fr;">
+        <span class="col-h">customer_id</span><span class="col-h">name</span><span class="col-h">email</span><span class="col-h">region</span>
+      </div>
+      <div class="tbl-row" style="grid-template-columns:1fr 1fr 1fr 1fr;">
+        <span class="col-v">C001</span><span class="col-v">Alice Johnson</span><span class="col-v">alice@example.com</span><span class="col-v">US-WEST</span>
+      </div>
+      <div class="tbl-row" style="grid-template-columns:1fr 1fr 1fr 1fr;">
+        <span class="col-v">C002</span><span class="col-v">Bob Smith</span><span class="col-v">bob@example.com</span><span class="col-v">EU-CENTRAL</span>
+      </div>
+      <div class="tbl-row" style="grid-template-columns:1fr 1fr 1fr 1fr;">
+        <span class="col-v">C003</span><span class="col-v">Carol White</span><span class="col-v">carol@example.com</span><span class="col-v">APAC</span>
+      </div>
+      <div class="dim-line" style="margin-top:10px;">3 rows returned · Policy engine: Apache Ranger · Decision: ALLOW · 0.8s</div>
+    </div>
+  </div>
+
+  <div class="box ok">
+    <span class="box-ico">🎉</span>
+    <div class="box-body">
+      <div class="box-title">Apache Ranger Policy Enforcement — Working End-to-End</div>
+      <p>The query now returns data. Apache Ranger evaluated the policy, matched diuser's identity to the <code>iceberg_data.dischema.customer</code> SELECT permission, and returned <strong>ALLOW</strong> through the CPG → Ranger Plugin pipeline. Zero changes were made to watsonx.data's own access control.</p>
+    </div>
+  </div>
+</section>
+
+<div class="hr"></div>
+
+<!-- BEFORE / AFTER -->
+<section class="rev">
+  <div class="slabel"><div class="snum">✦</div><span class="stag">Summary</span></div>
+  <h2>Before &amp; After — What Changed</h2>
+  <div class="fgrid">
+    <div class="fc">
+      <span class="fc-icon">🚫</span>
+      <div class="fc-title">Before Integration</div>
+      <p class="fc-desc">diuser runs <code>SELECT * FROM iceberg_data.dischema.customer</code> → <strong style="color:#dc2626;">Access Denied</strong>. No Ranger policy exists. CPG blocks the query.</p>
+    </div>
+    <div class="fc">
+      <span class="fc-icon">⚙️</span>
+      <div class="fc-title">What We Configured</div>
+      <p class="fc-desc">Added diuser in Ranger (exact username). Created PRESTO service. Defined SELECT policy on <code>iceberg_data.dischema.customer</code>. Enabled External Policy + Ranger integration in watsonx.data.</p>
+    </div>
+    <div class="fc">
+      <span class="fc-icon">✅</span>
+      <div class="fc-title">After Integration</div>
+      <p class="fc-desc">Same query → <strong style="color:#16a34a;">Access Granted</strong>. Ranger evaluates the policy, CPG receives ALLOW, Presto returns the data. Fine-grained control, zero watsonx.data code changes.</p>
+    </div>
+  </div>
+
+  <h3>Key Lessons Learned</h3>
+  <ul class="ck-list">
+    <li><div class="ck-box">✓</div>Username in Ranger must <strong>exactly match</strong> the username in watsonx.data — case-sensitive</li>
+    <li><div class="ck-box">✓</div>Presto JDBC connection to Ranger may fail — <strong>add resources manually</strong> with exact catalog/schema/table names</li>
+    <li><div class="ck-box">✓</div>Enable <strong>External Policy</strong> toggle in watsonx.data before adding the Ranger integration</li>
+    <li><div class="ck-box">✓</div>Only <strong>one policy engine</strong> (Ranger or IBM Knowledge Catalog) can be active at a time from v2.1+</li>
+    <li><div class="ck-box">✓</div>Policy cache refresh time controls how quickly new Ranger policies take effect in watsonx.data</li>
+    <li><div class="ck-box">✓</div>For Iceberg catalogs, manually define policies for <strong>snapshot views</strong> too — otherwise errors occur</li>
+  </ul>
+
+  <h3>Advanced Policy Types</h3>
+  <p>Beyond basic access control, Apache Ranger supports advanced policy types for fine-grained data protection:</p>
+  
+  <div class="fgrid">
+    <div class="fc">
+      <span class="fc-icon">🔍</span>
+      <div class="fc-title">Row-Level Filtering</div>
+      <p class="fc-desc">Control which rows users can see based on filter conditions. Perfect for multi-tenant scenarios or regional data access. <a href="ranger-row-level-filtering.html" style="color:var(--primary);text-decoration:none;font-weight:600;">Learn more →</a></p>
+    </div>
+    <div class="fc">
+      <span class="fc-icon">🎭</span>
+      <div class="fc-title">Column Masking</div>
+      <p class="fc-desc">Mask sensitive data in specific columns while maintaining query access. Protect PII, credit cards, emails, and other sensitive information. <a href="ranger-column-masking.html" style="color:var(--primary);text-decoration:none;font-weight:600;">Learn more →</a></p>
+    </div>
+  </div>
+
+  <div class="tags">
+    <span class="tag b">#IBMwatsonx</span>
+    <span class="tag b">#watsonxData</span>
+    <span class="tag o">#ApacheRanger</span>
+    <span class="tag p">#DataSecurity</span>
+    <span class="tag g">#DataGovernance</span>
+    <span class="tag b">#Presto</span>
+    <span class="tag p">#ApacheSpark</span>
+    <span class="tag o">#ApacheIceberg</span>
+    <span class="tag g">#DataLakehouse</span>
+    <span class="tag b">#AccessControl</span>
+    <span class="tag p">#EnterpriseData</span>
+    <span class="tag o">#HandsOnLab</span>
+  </div>
+</section>
+
+<div class="footer">
+  <p>IBM watsonx.data · Apache Ranger Integration — Practical Walkthrough · © 2025</p>
+  <p style="margin-top:8px;">Built with ❤️ for the data engineering community</p>
+</div>
+
+</div><!-- end .wrap -->
+
+<script>
+/* Progress bar */
+window.addEventListener('scroll',()=>{
+  const d=document.documentElement;
+  const pct=(d.scrollTop/(d.scrollHeight-d.clientHeight))*100;
+  document.getElementById('pbar').style.width=Math.min(pct,100)+'%';
+});
+
+/* Scroll reveal */
+const ro=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('show');});
+},{threshold:.07,rootMargin:'0px 0px -40px 0px'});
+document.querySelectorAll('.rev').forEach(el=>ro.observe(el));
+
+/* Copy code */
+function copyCode(btn){
+  const pre=btn.closest('.code').querySelector('pre');
+  const text=pre.innerText;
+  navigator.clipboard.writeText(text).then(()=>{
+    btn.textContent='Copied!';btn.classList.add('done');
+    setTimeout(()=>{btn.textContent='Copy';btn.classList.remove('done');},2200);
+  });
+}
+</script>
+</body>
+</html>
+</section>

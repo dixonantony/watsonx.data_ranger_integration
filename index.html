@@ -380,10 +380,27 @@ td:first-child{font-weight:600;color:var(--text);}
   <p>To demonstrate the security enforcement, we'll run the same query with two different users. First, we'll verify that <span class="user user-admin">Admin</span> can access the data successfully. Then we'll show that <span class="user user-a">diuser</span> gets access denied without a Ranger policy.</p>
 
   <h3>Step 1: Verify Admin Access (Baseline)</h3>
-  <p>First, let's confirm that the admin user can successfully query the table. This establishes our baseline and proves the table exists and is accessible.</p>
+  <p>First, let's confirm that the admin user can successfully query the table with either Presto or Spark. This establishes our baseline and proves the table exists and is accessible.</p>
 
-  <!-- Screenshot: Admin Success -->
-  <img src="screenshots/admin_select.png" alt="Admin Query Success" class="ss-img" style="margin-bottom: 20px;">
+  <!-- Engine Tabs for Admin Access -->
+  <div class="engine-tabs">
+    <button class="engine-tab presto active" onclick="switchEngine('admin', 'presto')">
+      <img src="logo/presto.png" alt="Presto" class="engine-logo"> Presto<span class="engine-badge presto">SQL Engine</span>
+    </button>
+    <button class="engine-tab spark" onclick="switchEngine('admin', 'spark')">
+      <img src="logo/spark.png" alt="Spark" class="engine-logo"> Spark<span class="engine-badge spark">Distributed Engine</span>
+    </button>
+  </div>
+
+  <!-- Presto Content -->
+  <div id="admin-presto" class="engine-content active">
+    <img src="screenshots/admin_select.png" alt="Presto Admin Query Success" class="ss-img" style="margin-bottom: 20px;">
+  </div>
+
+  <!-- Spark Content -->
+  <div id="admin-spark" class="engine-content">
+    <img src="screenshots/admin_spark_select.png" alt="Spark Admin Query Success" class="ss-img" style="margin-bottom: 20px;">
+  </div>
 
   <h3>Step 2: Run the Query as diuser (Access Denied)</h3>
   <p>Now log in as <span class="user user-a">diuser</span> and run the exact same query with either Presto or Spark engine. With no Ranger policy defined yet, the query should fail. This confirms that the security layer is working.</p>

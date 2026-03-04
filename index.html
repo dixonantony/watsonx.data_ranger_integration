@@ -310,19 +310,10 @@ td:first-child{font-weight:600;color:var(--text);}
   </div>
 
   <!-- Screenshot placeholder: User creation -->
-  <div class="ss">
-    <div class="ss-bar">
-      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
-      <div class="ss-url">watsonx.data (On-Prem) → Access Control → Users → Add User</div>
-    </div>
-    <div class="ss-body">
-      <div class="ss-icon">👤</div>
-      <div class="ss-label">Screenshot: Creating diuser in watsonx.data</div>
-      <div class="ss-sub">Access Control → Users tab → Add User → Enter username: diuser</div>
-      <div class="ss-badge blue">On-Premises Installation</div>
-    </div>
-  </div>
-
+ 
+  <img src="screenshots/wxd_add_user.png" alt="Creating diuser in watsonx.data" class="ss-img" style="margin-bottom: 20px;">
+  <img src="screenshots/wxd_add_user_role.png" alt="Select role option" class="ss-img" style="margin-bottom: 20px;">
+  <img src="screenshots/wxd_ass_user_role.png" alt="Assign user role" class="ss-img" style="margin-bottom: 20px;">
   <h3>Step 1: Assign diuser as Metastore Admin to the Instance</h3>
   <div class="steps">
     <div class="step">
@@ -332,18 +323,7 @@ td:first-child{font-weight:600;color:var(--text);}
   </div>
 
   <!-- Screenshot placeholder: Instance access -->
-  <div class="ss">
-    <div class="ss-bar">
-      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
-      <div class="ss-url">watsonx.data (On-Prem) → Access Control → Instance Access</div>
-    </div>
-    <div class="ss-body">
-      <div class="ss-icon">🏢</div>
-      <div class="ss-label">Screenshot: Assigning Instance Access to diuser</div>
-      <div class="ss-sub">Access Control → Assign diuser as User to the watsonx.data instance</div>
-      <div class="ss-badge blue">Role: User</div>
-    </div>
-  </div>
+  <img src="screenshots/wxd_ass_inst_role.png" alt="Creating diuser in watsonx.data" class="ss-img" style="margin-bottom: 20px;">
 
   <h3>Step 2: Add diuser as Admin of Presto and Spark Engines</h3>
   <div class="steps">
@@ -362,32 +342,8 @@ td:first-child{font-weight:600;color:var(--text);}
   </div>
 
   <!-- Screenshot placeholder: Presto engine access -->
-  <div class="ss">
-    <div class="ss-bar">
-      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
-      <div class="ss-url">watsonx.data (On-Prem) → Infrastructure → Engines → Presto</div>
-    </div>
-    <div class="ss-body">
-      <div class="ss-icon">🔍</div>
-      <div class="ss-label">Screenshot: Adding diuser to Presto Engine</div>
-      <div class="ss-sub">Infrastructure → Engines → Presto → Manage access → Add diuser</div>
-      <div class="ss-badge blue">Role: Admin</div>
-    </div>
-  </div>
-
-  <!-- Screenshot placeholder: Spark engine access -->
-  <div class="ss">
-    <div class="ss-bar">
-      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
-      <div class="ss-url">watsonx.data (On-Prem) → Infrastructure → Engines → Spark</div>
-    </div>
-    <div class="ss-body">
-      <div class="ss-icon">⚡</div>
-      <div class="ss-label">Screenshot: Adding diuser to Spark Engine</div>
-      <div class="ss-sub">Infrastructure → Engines → Apache Spark → Manage access → Add diuser</div>
-      <div class="ss-badge blue">Role: Admin</div>
-    </div>
-  </div>
+  <img src="screenshots/wxd_presto_access.png" alt="Adding diuser to Presto Engine" class="ss-img" style="margin-bottom: 20px;">
+  <img src="screenshots/wxd_spark_access.png" alt="Adding diuser to Spark Engine" class="ss-img" style="margin-bottom: 20px;">
 
   <h3>Step 3: Add diuser as User of Catalog</h3>
   <div class="steps">
@@ -402,19 +358,7 @@ td:first-child{font-weight:600;color:var(--text);}
   </div>
 
   <!-- Screenshot placeholder: Catalog access -->
-  <div class="ss">
-    <div class="ss-bar">
-      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
-      <div class="ss-url">watsonx.data (On-Prem) → Data → Catalogs → iceberg_data</div>
-    </div>
-    <div class="ss-body">
-      <div class="ss-icon">🗂️</div>
-      <div class="ss-label">Screenshot: Adding diuser to Iceberg Catalog</div>
-      <div class="ss-sub">Data → Catalogs → iceberg_data → Manage access → Add diuser</div>
-      <div class="ss-badge blue">Role: User</div>
-    </div>
-  </div>
-
+  <img src="screenshots/wxd_spark_access.png" alt="Adding diuser to Catalog" class="ss-img" style="margin-bottom: 20px;">
 </section>
 
 <div class="hr"></div>
@@ -428,28 +372,8 @@ td:first-child{font-weight:600;color:var(--text);}
   <h3>Step 1: Verify Admin Access (Baseline)</h3>
   <p>First, let's confirm that the admin user can successfully query the table. This establishes our baseline and proves the table exists and is accessible.</p>
 
-  <div class="code">
-    <div class="code-top">
-      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
-      <span class="code-lang">SQL — watsonx.data Query Workspace (Presto) — Admin User</span>
-      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-    </div>
-    <pre><span class="kw">SELECT</span> * <span class="kw">FROM</span> <span class="str">iceberg_data</span>.<span class="str">dischema</span>.<span class="str">customer</span>;</pre>
-  </div>
-
   <!-- Screenshot: Admin Success -->
-  <div class="ss">
-    <div class="ss-bar">
-      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
-      <div class="ss-url">watsonx.data → Query Workspace → Admin User</div>
-    </div>
-    <div class="ss-body">
-      <div class="ss-icon">✅</div>
-      <div class="ss-label">Screenshot: Admin Query Success</div>
-      <div class="ss-sub">Admin user runs SELECT * FROM iceberg_data.dischema.customer — Query executes successfully</div>
-      <div class="ss-badge green">✅ Query Successful — Admin has full access</div>
-    </div>
-  </div>
+  <img src="screenshots/admin_select.png" alt="Admin Query Success" class="ss-img" style="margin-bottom: 20px;">
 
   <h3>Step 2: Run the Query as diuser (Access Denied)</h3>
   <p>Now log in as <span class="user user-a">diuser</span> and run the exact same query. With no Ranger policy defined yet, the query should fail. This confirms that the security layer is working.</p>
@@ -469,42 +393,8 @@ td:first-child{font-weight:600;color:var(--text);}
     </div>
   </div>
 
-  <div class="code">
-    <div class="code-top">
-      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
-      <span class="code-lang">SQL — watsonx.data Query Workspace (Presto) — diuser</span>
-      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-    </div>
-    <pre><span class="kw">SELECT</span> * <span class="kw">FROM</span> <span class="str">iceberg_data</span>.<span class="str">dischema</span>.<span class="str">customer</span>;</pre>
-  </div>
-
   <!-- Screenshot: diuser Access Denied -->
-  <div class="ss">
-    <div class="ss-bar">
-      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
-      <div class="ss-url">watsonx.data → Query Workspace → diuser</div>
-    </div>
-    <div class="ss-body">
-      <div class="ss-icon">🚫</div>
-      <div class="ss-label">Screenshot: Access Denied Error</div>
-      <div class="ss-sub">diuser runs SELECT * FROM iceberg_data.dischema.customer — Access Denied</div>
-      <div class="ss-badge red">❌ Access Denied — No Ranger policy defined</div>
-    </div>
-  </div>
-
-  <!-- Mock query result: error -->
-  <div class="qresult">
-    <div class="qresult-top">
-      <span class="qresult-title">Query Result — iceberg_data.dischema.customer</span>
-      <span class="qresult-status fail"><span class="dot"></span>FAILED</span>
-    </div>
-    <div class="qresult-body">
-      <div class="err-line">Error: Access Denied</div>
-      <div class="dim-line">User [diuser] does not have [SELECT] privilege on [iceberg_data/dischema/customer]</div>
-      <div class="dim-line">Policy engine: Apache Ranger | Decision: DENY</div>
-      <div class="dim-line">Query execution time: 0.3s</div>
-    </div>
-  </div>
+  <img src="screenshots/diuser_select_before.png" alt="Access Denied Error" class="ss-img" style="margin-bottom: 20px;">
 
   <div class="box ok">
     <span class="box-ico">✅</span>
@@ -556,18 +446,7 @@ td:first-child{font-weight:600;color:var(--text);}
   </div>
 
   <!-- Screenshot placeholder: Add user in Ranger -->
-  <div class="ss">
-    <div class="ss-bar">
-      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
-      <div class="ss-url">Apache Ranger → Settings → Users/Groups/Roles → Add New User</div>
-    </div>
-    <div class="ss-body">
-      <div class="ss-icon">👤</div>
-      <div class="ss-label">Screenshot: Adding diuser in Apache Ranger</div>
-      <div class="ss-sub">Settings → Users/Groups/Roles → Add New User (diuser)</div>
-      <div class="ss-badge blue">Username must exactly match watsonx.data username</div>
-    </div>
-  </div>
+  <img src="screenshots/ranger_add_user.png" alt="Adding diuser in Apache Ranger" class="ss-img" style="margin-bottom: 20px;">
 
   <h3>Step 2 — Create a PRESTO Service in Ranger</h3>
   <div class="steps">
@@ -582,18 +461,7 @@ td:first-child{font-weight:600;color:var(--text);}
   </div>
 
   <!-- Screenshot placeholder: Add New Service form -->
-  <div class="ss">
-    <div class="ss-bar">
-      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
-      <div class="ss-url">Apache Ranger → Service Manager → PRESTO → Add New Service Form</div>
-    </div>
-    <div class="ss-body">
-      <div class="ss-icon">📝</div>
-      <div class="ss-label">Screenshot: Add New Service Configuration</div>
-      <div class="ss-sub">Fill in service name (watsonx-presto) and connection details</div>
-      <div class="ss-badge blue">Service Configuration Form</div>
-    </div>
-  </div>
+  <img src="screenshots/ranger_add_presto_svc.png" alt="Adding diuser in Apache Ranger" class="ss-img" style="margin-bottom: 20px;">
 
   <div class="steps">
     <div class="step">
@@ -603,18 +471,7 @@ td:first-child{font-weight:600;color:var(--text);}
   </div>
 
   <!-- Screenshot placeholder: Create Presto service -->
-  <div class="ss">
-    <div class="ss-bar">
-      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
-      <div class="ss-url">Apache Ranger → Service Manager → PRESTO → Add New Service</div>
-    </div>
-    <div class="ss-body">
-      <div class="ss-icon">⚙️</div>
-      <div class="ss-label">Screenshot: Creating PRESTO Service in Ranger</div>
-      <div class="ss-sub">Service Manager → PRESTO section → Add New Service (+)</div>
-      <div class="ss-badge blue">Service name: watsonx-presto</div>
-    </div>
-  </div>
+  <img src="screenshots/ranger_save_presto_svc.png" alt="Creating PRESTO Service in Ranger" class="ss-img" style="margin-bottom: 20px;">
 
   <h3>Step 3 — Create an Access Policy for diuser</h3>
   
@@ -653,18 +510,7 @@ td:first-child{font-weight:600;color:var(--text);}
   </div>
 
   <!-- Screenshot placeholder: Add diuser with SELECT permission -->
-  <div class="ss">
-    <div class="ss-bar">
-      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
-      <div class="ss-url">Apache Ranger → watsonx-presto → Add New Policy → Allow Conditions</div>
-    </div>
-    <div class="ss-body">
-      <div class="ss-icon">✅</div>
-      <div class="ss-label">Screenshot: Adding diuser with SELECT Permission</div>
-      <div class="ss-sub">Allow Conditions → User: diuser → Permission: Select (checked)</div>
-      <div class="ss-badge blue">User and Permission Configuration</div>
-    </div>
-  </div>
+  <img src="screenshots/ranger_user_select_perm.png" alt="Adding diuser with SELECT Permission" class="ss-img" style="margin-bottom: 20px;">
 
   <div class="steps">
     <div class="step">
@@ -674,18 +520,7 @@ td:first-child{font-weight:600;color:var(--text);}
   </div>
 
   <!-- Screenshot placeholder: Create policy -->
-  <div class="ss">
-    <div class="ss-bar">
-      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
-      <div class="ss-url">Apache Ranger → watsonx-presto → Add New Policy</div>
-    </div>
-    <div class="ss-body">
-      <div class="ss-icon">📋</div>
-      <div class="ss-label">Screenshot: Creating Access Policy in Ranger</div>
-      <div class="ss-sub">Resource: iceberg_data / dischema / customer | User: diuser | Permission: SELECT</div>
-      <div class="ss-badge blue">Resources added manually — exact names required</div>
-    </div>
-  </div>
+  <img src="screenshots/ranger-create-policy.png" alt="Creating Access Policy in Ranger" class="ss-img" style="margin-bottom: 20px;">
 
   <div class="box tip">
     <span class="box-ico">💡</span>
@@ -720,18 +555,7 @@ td:first-child{font-weight:600;color:var(--text);}
   </div>
 
   <!-- Screenshot placeholder: Enable External Policy -->
-  <div class="ss">
-    <div class="ss-bar">
-      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
-      <div class="ss-url">watsonx.data → Access Control → Integrations → Enable External Policy</div>
-    </div>
-    <div class="ss-body">
-      <div class="ss-icon">🔐</div>
-      <div class="ss-label">Screenshot: Enabling External Policy Toggle</div>
-      <div class="ss-sub">Access Control → Integrations tab → Toggle "Enable data policy within watsonx.data"</div>
-      <div class="ss-badge blue">External Policy Enabled</div>
-    </div>
-  </div>
+  <img src="screenshots/enable-external-policy.png" alt="Enabling External Policy Toggle" class="ss-img" style="margin-bottom: 20px;">
 
   <div class="steps">
     <div class="step">
@@ -751,7 +575,7 @@ td:first-child{font-weight:600;color:var(--text);}
       <div class="step-body"><div class="step-title">Click "Integrate"</div><p class="step-desc">Click <strong>Integrate</strong>. The Ranger Plugin is now installed in CPG. Apache Ranger appears as active in the integrations list.</p></div>
     </div>
   </div>
-
+  <img src="screenshots/wxd_ranger_integration.png" alt="Enabling External Policy + Ranger Integration" class="ss-img" style="margin-bottom: 20px;">
   <h3>Integration Configuration Reference</h3>
   <div class="tw">
     <table>
@@ -771,18 +595,7 @@ td:first-child{font-weight:600;color:var(--text);}
   </div>
 
   <!-- Screenshot placeholder: Enable External Policy + Ranger integration -->
-  <div class="ss">
-    <div class="ss-bar">
-      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
-      <div class="ss-url">watsonx.data → Access Control → Integrations → Integrate Service</div>
-    </div>
-    <div class="ss-body">
-      <div class="ss-icon">🔗</div>
-      <div class="ss-label">Screenshot: Enabling External Policy &amp; Ranger Integration</div>
-      <div class="ss-sub">Access Control → Integrations tab → Enable External Policy → Integrate Service → Apache Ranger</div>
-      <div class="ss-badge blue">Ranger Plugin installed into CPG</div>
-    </div>
-  </div>
+  <img src="screenshots/wxd_ranger_integration_save.png" alt="Enabling External Policy + Ranger Integration" class="ss-img" style="margin-bottom: 20px;">
 
   <div class="box ok">
     <span class="box-ico">✅</span>
@@ -816,51 +629,8 @@ td:first-child{font-weight:600;color:var(--text);}
     </div>
   </div>
 
-  <div class="code">
-    <div class="code-top">
-      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
-      <span class="code-lang">SQL — watsonx.data Query Workspace (Presto)</span>
-      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-    </div>
-    <pre><span class="kw">SELECT</span> * <span class="kw">FROM</span> <span class="str">iceberg_data</span>.<span class="str">dischema</span>.<span class="str">customer</span>;</pre>
-  </div>
-
   <!-- Screenshot placeholder: Access Granted -->
-  <div class="ss">
-    <div class="ss-bar">
-      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
-      <div class="ss-url">watsonx.data → Query Workspace → Execute Query</div>
-    </div>
-    <div class="ss-body">
-      <div class="ss-icon">🎉</div>
-      <div class="ss-label">Screenshot: Query Returns Results</div>
-      <div class="ss-sub">diuser runs SELECT * FROM iceberg_data.dischema.customer — data returned</div>
-      <div class="ss-badge green">✅ Access Granted — Ranger policy matched</div>
-    </div>
-  </div>
-
-  <!-- Mock query result: success -->
-  <div class="qresult">
-    <div class="qresult-top">
-      <span class="qresult-title">Query Result — iceberg_data.dischema.customer</span>
-      <span class="qresult-status pass"><span class="dot"></span>SUCCESS</span>
-    </div>
-    <div class="qresult-body">
-      <div class="tbl-header" style="grid-template-columns:1fr 1fr 1fr 1fr;">
-        <span class="col-h">customer_id</span><span class="col-h">name</span><span class="col-h">email</span><span class="col-h">region</span>
-      </div>
-      <div class="tbl-row" style="grid-template-columns:1fr 1fr 1fr 1fr;">
-        <span class="col-v">C001</span><span class="col-v">Alice Johnson</span><span class="col-v">alice@example.com</span><span class="col-v">US-WEST</span>
-      </div>
-      <div class="tbl-row" style="grid-template-columns:1fr 1fr 1fr 1fr;">
-        <span class="col-v">C002</span><span class="col-v">Bob Smith</span><span class="col-v">bob@example.com</span><span class="col-v">EU-CENTRAL</span>
-      </div>
-      <div class="tbl-row" style="grid-template-columns:1fr 1fr 1fr 1fr;">
-        <span class="col-v">C003</span><span class="col-v">Carol White</span><span class="col-v">carol@example.com</span><span class="col-v">APAC</span>
-      </div>
-      <div class="dim-line" style="margin-top:10px;">3 rows returned · Policy engine: Apache Ranger · Decision: ALLOW · 0.8s</div>
-    </div>
-  </div>
+  <img src="screenshots/diuser_select_after.png" alt="Enabling External Policy + Ranger Integration" class="ss-img" style="margin-bottom: 20px;">
 
   <div class="box ok">
     <span class="box-ico">🎉</span>
@@ -894,16 +664,6 @@ td:first-child{font-weight:600;color:var(--text);}
       <p class="fc-desc">Same query → <strong style="color:#16a34a;">Access Granted</strong>. Ranger evaluates the policy, CPG receives ALLOW, Presto returns the data. Fine-grained control, zero watsonx.data code changes.</p>
     </div>
   </div>
-
-  <h3>Key Lessons Learned</h3>
-  <ul class="ck-list">
-    <li><div class="ck-box">✓</div>Username in Ranger must <strong>exactly match</strong> the username in watsonx.data — case-sensitive</li>
-    <li><div class="ck-box">✓</div>Presto JDBC connection to Ranger may fail — <strong>add resources manually</strong> with exact catalog/schema/table names</li>
-    <li><div class="ck-box">✓</div>Enable <strong>External Policy</strong> toggle in watsonx.data before adding the Ranger integration</li>
-    <li><div class="ck-box">✓</div>Only <strong>one policy engine</strong> (Ranger or IBM Knowledge Catalog) can be active at a time from v2.1+</li>
-    <li><div class="ck-box">✓</div>Policy cache refresh time controls how quickly new Ranger policies take effect in watsonx.data</li>
-    <li><div class="ck-box">✓</div>For Iceberg catalogs, manually define policies for <strong>snapshot views</strong> too — otherwise errors occur</li>
-  </ul>
 
   <h3>Advanced Policy Types</h3>
   <p>Beyond basic access control, Apache Ranger supports advanced policy types for fine-grained data protection:</p>

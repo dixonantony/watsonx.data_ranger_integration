@@ -166,25 +166,6 @@ code{font-family:'Fira Code',monospace;font-size:.84em;background:var(--primary-
   </div>
 </section>
 
-<div class="hr"></div>
-
-<!-- PREREQUISITES -->
-<section class="rev">
-  <div class="slabel"><div class="snum">📋</div><span class="stag">Prerequisites</span></div>
-  <h2>Before You Begin</h2>
-  <p>Ensure you have the following in place before creating row-level filtering policies:</p>
-  
-  <ul class="ck-list">
-    <li><div class="ck-box">✓</div><strong>IBM watsonx.data instance</strong> — A running watsonx.data deployment (SaaS or On-Premises)</li>
-    <li><div class="ck-box">✓</div><strong>Apache Ranger provisioned</strong> — Apache Ranger server is installed and accessible</li>
-    <li><div class="ck-box">✓</div><strong>Ranger integration enabled</strong> — Apache Ranger policy is enabled in watsonx.data. See <a href="index.html" style="color:var(--primary);text-decoration:none;font-weight:600;">Enabling Apache Ranger policy for resources</a></li>
-    <li><div class="ck-box">✓</div><strong>User created</strong> — The user (e.g., <code>diuser</code>) exists in both watsonx.data and Apache Ranger with matching usernames</li>
-    <li><div class="ck-box">✓</div><strong>Table exists</strong> — The target table is registered in a catalog accessible by watsonx.data</li>
-  </ul>
-</section>
-
-<div class="hr"></div>
-
 <!-- PROCEDURE -->
 <section class="rev">
   <div class="slabel"><div class="snum">01</div><span class="stag">Procedure</span></div>
@@ -208,18 +189,7 @@ code{font-family:'Fira Code',monospace;font-size:.84em;background:var(--primary-
   </div>
 
   <!-- Screenshot placeholder: Service Manager -->
-  <div class="ss">
-    <div class="ss-bar">
-      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
-      <div class="ss-url">Apache Ranger → Service Manager → watsonx-presto</div>
-    </div>
-    <div class="ss-body">
-      <div class="ss-icon">🛡️</div>
-      <div class="ss-label">Screenshot: Opening Service Policies Page</div>
-      <div class="ss-sub">Service Manager → Click on watsonx-presto service name</div>
-      <div class="ss-badge blue">PRESTO Service</div>
-    </div>
-  </div>
+  <img src="screenshots/RF_open_svc.png" alt="Opening Service Policies Page" class="ss-img" style="margin-bottom: 20px;">
 
   <h3>Step 2: Add Row-Level Filter Policy</h3>
   <div class="steps">
@@ -262,18 +232,7 @@ code{font-family:'Fira Code',monospace;font-size:.84em;background:var(--primary-
   </div>
 
   <!-- Screenshot placeholder: Row Filter Conditions -->
-  <div class="ss">
-    <div class="ss-bar">
-      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
-      <div class="ss-url">Apache Ranger → Add New Policy → Row Filter Conditions</div>
-    </div>
-    <div class="ss-body">
-      <div class="ss-icon">🔍</div>
-      <div class="ss-label">Screenshot: Row Filter Conditions</div>
-      <div class="ss-sub">User: diuser | Permissions: Select | Row Level Filter: c1=1</div>
-      <div class="ss-badge blue">Filter Expression: c1=1</div>
-    </div>
-  </div>
+  <img src="screenshots/RF_Create_Policy.png" alt="Add New Policy" class="ss-img" style="margin-bottom: 20px;">
 
   <h3>Step 5: Save the Policy</h3>
   <div class="steps">
@@ -284,18 +243,7 @@ code{font-family:'Fira Code',monospace;font-size:.84em;background:var(--primary-
   </div>
 
   <!-- Screenshot placeholder: Save Policy -->
-  <div class="ss">
-    <div class="ss-bar">
-      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
-      <div class="ss-url">Apache Ranger → Add New Policy → Save</div>
-    </div>
-    <div class="ss-body">
-      <div class="ss-icon">💾</div>
-      <div class="ss-label">Screenshot: Saving the Policy</div>
-      <div class="ss-sub">Click Save button to activate the row-level filter policy</div>
-      <div class="ss-badge green">✅ Policy Saved</div>
-    </div>
-  </div>
+  <img src="screenshots/RF_Save_Policy.png" alt="Saving the Policy" class="ss-img" style="margin-bottom: 20px;">
 </section>
 
 <div class="hr"></div>
@@ -321,48 +269,17 @@ code{font-family:'Fira Code',monospace;font-size:.84em;background:var(--primary-
     </div>
   </div>
 
-  <div class="code">
-    <div class="code-top">
-      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
-      <span class="code-lang">SQL — watsonx.data Query Workspace (Presto)</span>
-      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-    </div>
-    <pre><span class="kw">SELECT</span> * <span class="kw">FROM</span> <span class="str">iceberg_data</span>.<span class="str">dischema</span>.<span class="str">customer</span>;</pre>
-  </div>
-
   <h3>Before Filter: All Rows Visible (Admin User)</h3>
   <p>First, let's see what the admin user sees when querying the table without any row-level filter applied:</p>
 
   <!-- Screenshot placeholder: Before Filter - All Rows -->
-  <div class="ss">
-    <div class="ss-bar">
-      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
-      <div class="ss-url">watsonx.data → Query Workspace → Admin User</div>
-    </div>
-    <div class="ss-body">
-      <div class="ss-icon">📊</div>
-      <div class="ss-label">Screenshot: Before Filter - All Rows Visible</div>
-      <div class="ss-sub">Admin user runs SELECT * — All rows in the table are returned (c1=1, c1=2, c1=3, etc.)</div>
-      <div class="ss-badge blue">All Rows Visible</div>
-    </div>
-  </div>
+  <img src="screenshots/RF_Query_Before.png" alt="Query before row filter" class="ss-img" style="margin-bottom: 20px;">
 
   <h3>After Filter: Only Filtered Rows Visible (diuser)</h3>
   <p>Now, when diuser (with the row-level filter policy) runs the same query, only rows matching the filter condition are returned:</p>
 
   <!-- Screenshot placeholder: After Filter - Filtered Results -->
-  <div class="ss">
-    <div class="ss-bar">
-      <div class="mac"><span class="r"></span><span class="y"></span><span class="g"></span></div>
-      <div class="ss-url">watsonx.data → Query Workspace → diuser</div>
-    </div>
-    <div class="ss-body">
-      <div class="ss-icon">✅</div>
-      <div class="ss-label">Screenshot: After Filter - Only Filtered Rows</div>
-      <div class="ss-sub">diuser runs SELECT * — Only rows with c1=1 are returned (other rows filtered out)</div>
-      <div class="ss-badge green">✅ Row-Level Filter Applied</div>
-    </div>
-  </div>
+  <img src="screenshots/RF_Query_After.png" alt="Query after row filter" class="ss-img" style="margin-bottom: 20px;">
 
   <div class="box ok">
     <span class="box-ico">🎉</span>
@@ -391,7 +308,7 @@ code{font-family:'Fira Code',monospace;font-size:.84em;background:var(--primary-
 </section>
 
 <div class="footer">
-  <p>IBM watsonx.data · Apache Ranger Row-Level Filtering — Practical Guide · © 2025</p>
+  <p>IBM watsonx.data · Apache Ranger Row-Level Filtering — Practical Guide · © 2026</p>
   <p style="margin-top:8px;"><a href="index.html" style="color:var(--primary);text-decoration:none;">← Back to Main Guide</a></p>
 </div>
 

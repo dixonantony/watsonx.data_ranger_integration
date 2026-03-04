@@ -124,6 +124,18 @@ td:first-child{font-weight:600;color:var(--text);}
 .ck-box{width:22px;height:22px;border-radius:6px;background:var(--success-light);border:1px solid rgba(22,163,74,.4);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;margin-top:1px;color:var(--success);}
 .footer{text-align:center;padding:48px 0 28px;border-top:1px solid var(--border);margin-top:64px;}
 .footer p{font-size:13px;color:var(--dim);}
+.engine-tabs{display:flex;gap:8px;margin:16px 0 0;border-bottom:2px solid var(--border);}
+.engine-tab{padding:10px 20px;background:transparent;border:none;border-bottom:3px solid transparent;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;transition:all .3s;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:8px;}
+.engine-tab:hover{color:var(--text);background:var(--bg3);}
+.engine-tab.active{color:var(--primary);border-bottom-color:var(--primary);}
+.engine-tab.presto.active{color:var(--primary);border-bottom-color:var(--primary);}
+.engine-tab.spark.active{color:var(--accent2);border-bottom-color:var(--accent2);}
+.engine-content{display:none;}
+.engine-content.active{display:block;}
+.engine-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:100px;font-size:11px;font-weight:700;margin-left:6px;}
+.engine-badge.presto{background:var(--primary-light);border:1px solid rgba(37,99,235,.3);color:var(--primary);}
+.engine-badge.spark{background:var(--accent2-light);border:1px solid rgba(124,58,237,.3);color:var(--accent2);}
+.engine-logo{width:20px;height:20px;object-fit:contain;}
 </style>
 </head>
 <body>
@@ -305,25 +317,59 @@ td:first-child{font-weight:600;color:var(--text);}
     </div>
     <div class="step">
       <div class="step-n">2</div>
-      <div class="step-body"><div class="step-title">Open Query Workspace</div><p class="step-desc">From the navigation menu, click <strong>Query workspace</strong> and select the Presto engine.</p></div>
+      <div class="step-body"><div class="step-title">Open Query Workspace</div><p class="step-desc">From the navigation menu, click <strong>Query workspace</strong> and select either <strong>Presto</strong> or <strong>Spark</strong> engine.</p></div>
     </div>
     <div class="step">
       <div class="step-n">3</div>
-      <div class="step-body"><div class="step-title">Run a query to access the table</div><p class="step-desc">Execute a simple SELECT query that includes the masked column:</p></div>
+      <div class="step-body"><div class="step-title">Run a query to access the table</div><p class="step-desc">Execute a simple SELECT query that includes the masked column. Click the tabs below to see results from both engines:</p></div>
     </div>
   </div>
 
   <h3>Before Masking: Actual Data Visible (Admin User)</h3>
   <p>First, let's see what the admin user sees when querying the table without any column masking applied:</p>
 
-  <!-- Screenshot placeholder: Before Masking - Actual Data -->
-  <img src="screenshots/RF_Query_Before.png" alt="Query before column masking" class="ss-img" style="margin-bottom: 20px;">
+  <!-- Engine Tabs for Before Masking -->
+  <div class="engine-tabs">
+    <button class="engine-tab presto active" onclick="switchEngine('before', 'presto')">
+      <img src="logo/presto.png" alt="Presto" class="engine-logo"> Presto<span class="engine-badge presto">SQL Engine</span>
+    </button>
+    <button class="engine-tab spark" onclick="switchEngine('before', 'spark')">
+      <img src="logo/spark.png" alt="Spark" class="engine-logo"> Spark<span class="engine-badge spark">Distributed Engine</span>
+    </button>
+  </div>
+
+  <!-- Presto Content -->
+  <div id="before-presto" class="engine-content active">
+    <img src="screenshots/RF_Query_Before.png" alt="Presto Query before column masking" class="ss-img" style="margin-bottom: 20px;">
+  </div>
+
+  <!-- Spark Content -->
+  <div id="before-spark" class="engine-content">
+    <img src="screenshots/CM_Spark_Query_Before.png" alt="Spark Query before column masking" class="ss-img" style="margin-bottom: 20px;">
+  </div>
 
   <h3>After Masking: Masked Data (diuser)</h3>
   <p>Now, when diuser (with the column masking policy) runs the same query, the email column displays masked values:</p>
 
-  <!-- Screenshot placeholder: After Masking - Masked Results -->
-  <img src="screenshots/CM_Query_After.png" alt="Query before column masking" class="ss-img" style="margin-bottom: 20px;">
+  <!-- Engine Tabs for After Masking -->
+  <div class="engine-tabs">
+    <button class="engine-tab presto active" onclick="switchEngine('after', 'presto')">
+      <img src="logo/presto.png" alt="Presto" class="engine-logo"> Presto<span class="engine-badge presto">SQL Engine</span>
+    </button>
+    <button class="engine-tab spark" onclick="switchEngine('after', 'spark')">
+      <img src="logo/spark.png" alt="Spark" class="engine-logo"> Spark<span class="engine-badge spark">Distributed Engine</span>
+    </button>
+  </div>
+
+  <!-- Presto Content -->
+  <div id="after-presto" class="engine-content active">
+    <img src="screenshots/CM_Query_After.png" alt="Presto Query after column masking" class="ss-img" style="margin-bottom: 20px;">
+  </div>
+
+  <!-- Spark Content -->
+  <div id="after-spark" class="engine-content">
+    <img src="screenshots/CM_Spark_Query_After.png" alt="Spark Query after column masking" class="ss-img" style="margin-bottom: 20px;">
+  </div>
   <div class="box ok">
     <span class="box-ico">🎉</span>
     <div class="box-body">
@@ -381,6 +427,27 @@ function copyCode(btn){
     btn.textContent='Copied!';btn.classList.add('done');
     setTimeout(()=>{btn.textContent='Copy';btn.classList.remove('done');},2200);
   });
+}
+
+/* Switch engine tabs */
+function switchEngine(section, engine){
+  const clickedBtn = event.target.closest('.engine-tab');
+  const tabContainer = clickedBtn.parentElement;
+  const tabButtons = tabContainer.querySelectorAll('.engine-tab');
+  
+  tabButtons.forEach(tab => tab.classList.remove('active'));
+  clickedBtn.classList.add('active');
+  
+  const prestoContent = document.getElementById(`${section}-presto`);
+  const sparkContent = document.getElementById(`${section}-spark`);
+  
+  if(engine === 'presto'){
+    prestoContent.classList.add('active');
+    sparkContent.classList.remove('active');
+  } else {
+    sparkContent.classList.add('active');
+    prestoContent.classList.remove('active');
+  }
 }
 </script>
 </body>

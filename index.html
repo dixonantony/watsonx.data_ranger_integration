@@ -194,6 +194,18 @@ td:first-child{font-weight:600;color:var(--text);}
 .tag.g{background:var(--success-light);border-color:rgba(22,163,74,.3);color:var(--success);}
 .footer{text-align:center;padding:48px 0 28px;border-top:1px solid var(--border);margin-top:64px;}
 .footer p{font-size:13px;color:var(--dim);}
+.engine-tabs{display:flex;gap:8px;margin:16px 0 0;border-bottom:2px solid var(--border);}
+.engine-tab{padding:10px 20px;background:transparent;border:none;border-bottom:3px solid transparent;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;transition:all .3s;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:8px;}
+.engine-tab:hover{color:var(--text);background:var(--bg3);}
+.engine-tab.active{color:var(--primary);border-bottom-color:var(--primary);}
+.engine-tab.presto.active{color:var(--primary);border-bottom-color:var(--primary);}
+.engine-tab.spark.active{color:var(--accent2);border-bottom-color:var(--accent2);}
+.engine-content{display:none;}
+.engine-content.active{display:block;}
+.engine-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:100px;font-size:11px;font-weight:700;margin-left:6px;}
+.engine-badge.presto{background:var(--primary-light);border:1px solid rgba(37,99,235,.3);color:var(--primary);}
+.engine-badge.spark{background:var(--accent2-light);border:1px solid rgba(124,58,237,.3);color:var(--accent2);}
+.engine-logo{width:20px;height:20px;object-fit:contain;}
 @media(max-width:640px){.stats{grid-template-columns:1fr;}.fgrid{grid-template-columns:1fr;}.dual-p{gap:44px;}}
 </style>
 </head>
@@ -374,7 +386,7 @@ td:first-child{font-weight:600;color:var(--text);}
   <img src="screenshots/admin_select.png" alt="Admin Query Success" class="ss-img" style="margin-bottom: 20px;">
 
   <h3>Step 2: Run the Query as diuser (Access Denied)</h3>
-  <p>Now log in as <span class="user user-a">diuser</span> and run the exact same query. With no Ranger policy defined yet, the query should fail. This confirms that the security layer is working.</p>
+  <p>Now log in as <span class="user user-a">diuser</span> and run the exact same query with either Presto or Spark engine. With no Ranger policy defined yet, the query should fail. This confirms that the security layer is working.</p>
 
   <div class="steps">
     <div class="step">
@@ -383,16 +395,33 @@ td:first-child{font-weight:600;color:var(--text);}
     </div>
     <div class="step">
       <div class="step-n">2</div>
-      <div class="step-body"><div class="step-title">Open Query Workspace</div><p class="step-desc">From the navigation menu, click <strong>Query workspace</strong>. Select the Presto engine.</p></div>
+      <div class="step-body"><div class="step-title">Open Query Workspace</div><p class="step-desc">From the navigation menu, click <strong>Query workspace</strong>. Select either the <strong>Presto</strong> or <strong>Spark</strong> engine.</p></div>
     </div>
     <div class="step">
       <div class="step-n">3</div>
-      <div class="step-body"><div class="step-title">Execute the same query</div><p class="step-desc">Run the identical query against the Iceberg catalog:</p></div>
+      <div class="step-body"><div class="step-title">Execute the query</div><p class="step-desc">Run the query against the Iceberg catalog. Click the tabs below to see results from both engines:</p></div>
     </div>
   </div>
 
-  <!-- Screenshot: diuser Access Denied -->
-  <img src="screenshots/diuser_select_before.png" alt="Access Denied Error" class="ss-img" style="margin-bottom: 20px;">
+  <!-- Engine Tabs for Access Denied -->
+  <div class="engine-tabs">
+    <button class="engine-tab presto active" onclick="switchEngine('denied', 'presto')">
+      <img src="logo/presto.png" alt="Presto" class="engine-logo"> Presto<span class="engine-badge presto">SQL Engine</span>
+    </button>
+    <button class="engine-tab spark" onclick="switchEngine('denied', 'spark')">
+      <img src="logo/spark.png" alt="Spark" class="engine-logo"> Spark<span class="engine-badge spark">Distributed Engine</span>
+    </button>
+  </div>
+
+  <!-- Presto Content -->
+  <div id="denied-presto" class="engine-content active">
+    <img src="screenshots/diuser_select_before.png" alt="Presto Access Denied Error" class="ss-img" style="margin-bottom: 20px;">
+  </div>
+
+  <!-- Spark Content -->
+  <div id="denied-spark" class="engine-content">
+    <img src="screenshots/spark_diuser_select_before.png" alt="Spark Access Denied Error" class="ss-img" style="margin-bottom: 20px;">
+  </div>
 
   <div class="box ok">
     <span class="box-ico">✅</span>
@@ -610,7 +639,7 @@ td:first-child{font-weight:600;color:var(--text);}
 <section class="rev">
   <div class="slabel"><div class="snum">05</div><span class="stag">Phase Five</span></div>
   <h2>The Proof — Same Query, Access Granted</h2>
-  <p>Now log back in as <span class="user user-a">diuser</span> and run the exact same query. This time, Ranger has a policy granting SELECT on <code>iceberg_data.dischema.customer</code> — and the query should return results.</p>
+  <p>Now log back in as <span class="user user-a">diuser</span> and run the exact same query with either Presto or Spark. This time, Ranger has a policy granting SELECT on <code>iceberg_data.dischema.customer</code> — and the query should return results from both engines.</p>
 
   <div class="steps">
     <div class="step">
@@ -619,16 +648,33 @@ td:first-child{font-weight:600;color:var(--text);}
     </div>
     <div class="step">
       <div class="step-n">2</div>
-      <div class="step-body"><div class="step-title">Open Query Workspace</div><p class="step-desc">Navigate to <strong>Query workspace</strong> and select the Presto engine.</p></div>
+      <div class="step-body"><div class="step-title">Open Query Workspace</div><p class="step-desc">Navigate to <strong>Query workspace</strong> and select either <strong>Presto</strong> or <strong>Spark</strong> engine.</p></div>
     </div>
     <div class="step">
       <div class="step-n">3</div>
-      <div class="step-body"><div class="step-title">Run the same query again</div><p class="step-desc">Execute the identical query — no changes needed:</p></div>
+      <div class="step-body"><div class="step-title">Run the same query again</div><p class="step-desc">Execute the identical query — no changes needed. Click the tabs below to see results from both engines:</p></div>
     </div>
   </div>
 
-  <!-- Screenshot placeholder: Access Granted -->
-  <img src="screenshots/diuser_select_after.png" alt="Enabling External Policy + Ranger Integration" class="ss-img" style="margin-bottom: 20px;">
+  <!-- Engine Tabs for Access Granted -->
+  <div class="engine-tabs">
+    <button class="engine-tab presto active" onclick="switchEngine('granted', 'presto')">
+      <img src="logo/presto.png" alt="Presto" class="engine-logo"> Presto<span class="engine-badge presto">SQL Engine</span>
+    </button>
+    <button class="engine-tab spark" onclick="switchEngine('granted', 'spark')">
+      <img src="logo/spark.png" alt="Spark" class="engine-logo"> Spark<span class="engine-badge spark">Distributed Engine</span>
+    </button>
+  </div>
+
+  <!-- Presto Content -->
+  <div id="granted-presto" class="engine-content active">
+    <img src="screenshots/diuser_select_after.png" alt="Presto Query Success" class="ss-img" style="margin-bottom: 20px;">
+  </div>
+
+  <!-- Spark Content -->
+  <div id="granted-spark" class="engine-content">
+    <img src="screenshots/spark_diuser_select_after.png" alt="Spark Query Success" class="ss-img" style="margin-bottom: 20px;">
+  </div>
 
   <div class="box ok">
     <span class="box-ico">🎉</span>
@@ -724,6 +770,30 @@ function copyCode(btn){
     btn.textContent='Copied!';btn.classList.add('done');
     setTimeout(()=>{btn.textContent='Copy';btn.classList.remove('done');},2200);
   });
+}
+
+/* Switch engine tabs */
+function switchEngine(section, engine){
+  // Find the parent container of the clicked button
+  const clickedBtn = event.target.closest('.engine-tab');
+  const tabContainer = clickedBtn.parentElement;
+  const tabButtons = tabContainer.querySelectorAll('.engine-tab');
+  
+  // Update tab buttons
+  tabButtons.forEach(tab => tab.classList.remove('active'));
+  clickedBtn.classList.add('active');
+  
+  // Update content visibility
+  const prestoContent = document.getElementById(`${section}-presto`);
+  const sparkContent = document.getElementById(`${section}-spark`);
+  
+  if(engine === 'presto'){
+    prestoContent.classList.add('active');
+    sparkContent.classList.remove('active');
+  } else {
+    sparkContent.classList.add('active');
+    prestoContent.classList.remove('active');
+  }
 }
 </script>
 </body>
